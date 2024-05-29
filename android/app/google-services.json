@@ -1,0 +1,49 @@
+{
+  "project_info": {
+    "project_number": "798782934007",
+    "firebase_url": "https://signal-55ec5-default-rtdb.firebaseio.com",
+    "project_id": "signal-55ec5",
+    "storage_bucket": "signal-55ec5.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:798782934007:android:be83b42a6b81af01a17cf2",
+        "android_client_info": {
+          "package_name": "com.police"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB8ccMFkYU3q1O2Rc_MK457GVSUjDWu_WI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:798782934007:android:620c162b99b129a1a17cf2",
+        "android_client_info": {
+          "package_name": "com.reactdemo"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB8ccMFkYU3q1O2Rc_MK457GVSUjDWu_WI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
