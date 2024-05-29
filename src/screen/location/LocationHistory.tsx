@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { Text, View, StyleSheet, StatusBar, ScrollView } from 'react-native';
+import { Text, View, StyleSheet, StatusBar, ScrollView, RefreshControl } from 'react-native';
 import CustomHeader from '../../components/CustomHeader';
 import ComplaintsCard from '../../components/ComplaintsCard';
 import { useDispatch, useSelector } from 'react-redux';
@@ -51,54 +51,70 @@ const LocationHistory:React.FC<LocationHistoryProps> = ({navigation}) => {
 
   return (
     <>
-    <View style={styles.container}>
-      <StatusBar backgroundColor={'#af952e'} />
-      <CustomHeader name={'Location'} icon={'cog-outline'}  call={handleSetting}/>
+      <View style={styles.container}>
+        <StatusBar backgroundColor={'#af952e'} />
+        <CustomHeader
+          name={'Location'}
+          icon={'cog-outline'}
+          call={handleSetting}
+          backIcon="keyboard-backspace"
+          backCall={() => navigation.goBack()}
+        />
 
-      {notificationData.length > 0 ? (
-        <ScrollView
-          style={{marginTop: 20, marginBottom: 20}}
-          showsVerticalScrollIndicator={false}>
-         
-          {
-              notificationData.length > 0 && 
-               notificationData.map(
+        {notificationData.length > 0 ? (
+          <ScrollView
+            style={{marginTop: 20, marginBottom: 20}}
+            showsVerticalScrollIndicator={false}>
+            {notificationData.length > 0 &&
+              notificationData.map( 
                 (
-                    item: {
-                      notification_id: String;
-                      isRead: boolean;
-                      senderName: any;
-                      timeStamp: string;
-                      senderId:string;
-                    },
-                    key: React.Key | null | undefined,
+                  item: {
+                    notification_id: String;
+                    isRead: boolean;
+                    senderName: any;
+                    timeStamp: string;
+                    senderId: string;
+                  },
+                  key: React.Key | null | undefined,
                 ) => {
-                     return(
-                          <ComplaintsCard 
-                            key={key}
-                            icon={'location-pin'} 
-                            message={`Live Location Shared by a ${item.senderName}.`} 
-                            time={item.timeStamp} 
-                            color={'#af952e'} 
-                            isRead={notificationReadStatus !== null && notificationReadStatus === true ? true : item.isRead} 
-                            handleDetails={() => handleNotificationRead(item.notification_id , item.senderId)} />
-                     )
-                } 
-               )
-          } 
-
-        </ScrollView>
-      ) : (
-        <View style={{flex: 1, top: '20%'}}>
-          <Text style={{textAlign:'center', fontSize:25, fontWeight:'700'}}>No Notification</Text>
-        </View>
-      )}
-    </View>
-    {isBottomSheetVisible && (
+                  return (
+                    <ComplaintsCard
+                      key={key}
+                      icon={'location-pin'}
+                      message={`Live Location Shared by a ${item.senderName}.`}
+                      time={item.timeStamp}
+                      color={'#af952e'}
+                      isRead={
+                        notificationReadStatus !== null &&
+                        notificationReadStatus === true
+                          ? true
+                          : item.isRead
+                      }
+                      handleDetails={() =>
+                        handleNotificationRead(
+                          item.notification_id,
+                          item.senderId,
+                        )
+                      }
+                    />
+                  );
+                },
+              )}
+          </ScrollView>
+        ) : (
+          <View style={{flex: 1, top: '20%'}}>
+            <Text
+              style={{textAlign: 'center', fontSize: 25, fontWeight: '700'}}>
+              No Notification
+            </Text>
+          </View>
+        )}
+      </View>
+      {isBottomSheetVisible && (
         <NotificationBottomSheet
           setBottomSheetVisible={setBottomSheetVisible}
         />
-    )}
+      )}
     </>
   );
 };

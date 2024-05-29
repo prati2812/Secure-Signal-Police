@@ -38,8 +38,10 @@ const handlePhoneNumber = async() => {
       
      setIndicatorVisible(true);
      try{
-      firebase.auth().settings.appVerificationDisabledForTesting=true;
+      console.log("===" , phoneNo);
       const confirmation = await auth().signInWithPhoneNumber(phoneNo);
+      console.log("====",confirmation);
+      
       dispatch(addVerificationId(confirmation.verificationId));  
       setIndicatorVisible(false);
        
@@ -47,6 +49,8 @@ const handlePhoneNumber = async() => {
      }
      catch(error){
        setIndicatorVisible(false); 
+       console.log(error);
+       
        Alert.alert(
         'Error',
         'Please try again later',
@@ -106,6 +110,7 @@ const getColor = (accountType: string | null) => {
 };
 
 
+const isDisabled = isError || isIndicatorVisible;
 
   return (
     <View style={[styles.container, accountType && {backgroundColor:getColor(accountType)}]}>
@@ -147,7 +152,7 @@ const getColor = (accountType: string | null) => {
       
       <View style={styles.sendCodeBtnView}>
          <TouchableOpacity style={[styles.sendBtnCode, isError && styles.sendBtnCodeDisable , accountType && {backgroundColor:getColor(accountType)}]}
-                disabled={isError}
+                disabled={isDisabled}
                 onPress={ () => handlePhoneNumber()}>
          <View style={styles.btnView}>
             {

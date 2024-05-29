@@ -1,5 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { firebase } from '@react-native-firebase/auth';
+import {  firebase } from '@react-native-firebase/auth';
 import axios from 'axios';
 import * as React from 'react';
 import { useEffect, useState } from 'react';
@@ -58,7 +58,7 @@ const DeleteAccountSheet:React.FC<DeleteAccountSheetProps> = ({setDeleteAccountS
 
       if(response.status === 200){
         await AsyncStorage.clear();
-        dispatch(addToken(''));
+        dispatch(addToken(null));
         setIndicatorVisible(false);
         slideDown();
         setTimeout(() => {
@@ -70,6 +70,7 @@ const DeleteAccountSheet:React.FC<DeleteAccountSheetProps> = ({setDeleteAccountS
       const response = await instance.post('/hospital/deleteUserAccount', {userId});
 
       if(response.status === 200){
+        firebase.auth().signOut();
         await AsyncStorage.clear();
         dispatch(addToken(''));
         setIndicatorVisible(false);

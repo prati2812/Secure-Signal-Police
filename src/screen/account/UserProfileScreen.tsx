@@ -25,32 +25,26 @@ const UserProfileScreen:React.FC<UserProfileScreenProps> = ({navigation}) => {
   const [isImageSelectionSheetVisible , setImageSelectionSheetVisible] = useState(false);
   const [notificationToken , setNotificationToken] = useState<string | null>('');
   const [isIndicatorVisible, setIndicatorVisible] = useState(false);
-  const [isExit , setExit] = useState(false);
-  const [appState, setAppState] = useState(AppState.currentState);
+  const [loading, setLoading] = useState(true);
   const imageResponse = useSelector((state : any) => state.userProfile.imageResponse);
   const imageUri = useSelector((state:any) => state.userProfile.imageUri);
   const currentUser = firebase.auth().currentUser;
   const dispatch = useDispatch();
   const accountTypeTheme = useSelector((state: any) => state.userProfile.accountType);
 
-  useEffect(() => {
-    const subscription = AppState.addEventListener('change', handleAppStateChange);
-    return () => {
-      subscription.remove();
-    };
-  },[]);
+  
 
   useEffect(() => {
      if(accountType){
-      dispatchStore(addUserName(currentUser?.uid , accountType));
+      dispatchStore(addUserName(currentUser?.uid , accountType)).
+       then(() => setLoading(false))
+      .catch(() => setLoading(false));
      }
   },[accountType])
 
   useEffect(() => {
      getToken();
      requestLocationPermission();
-     if(accountType)
-       dispatchStore(addUserName(currentUser?.uid , accountType));     
   },[]);
 
   useEffect(() => {
@@ -94,16 +88,19 @@ const UserProfileScreen:React.FC<UserProfileScreenProps> = ({navigation}) => {
  }
 
 
-  // Check App is forground or background 
-  const handleAppStateChange = (nextAppState: any) => {
-    setAppState(nextAppState);
-    if (appState.match(/inactive|background/) && nextAppState === 'active') {
-       if(isExit === true){
-          navigation.navigate('PhoneNumber');
-       }
-    }
-  };
+  const closeApp = () => {
+    dispatch({
+      type: 'ADD_USER_NAME',
+      payload: null,
+    });
 
+    dispatch({
+      type: 'ADD_IMAGE_URI',
+      payload: null,
+    });
+    navigation.navigate('AccountType')
+  }
+ 
 
   // Terminate the process
   const handleCloseApp = async() => {
@@ -116,7 +113,7 @@ const UserProfileScreen:React.FC<UserProfileScreenProps> = ({navigation}) => {
           onPress: () => console.log('Cancel Pressed'),
           style: 'cancel',
         },
-        {text: 'Yes', onPress: () => {setExit(true), BackHandler.exitApp()} , },
+        {text: 'Yes', onPress: () =>  closeApp()},
       ],
       {
         cancelable: false,
@@ -176,6 +173,8 @@ const UserProfileScreen:React.FC<UserProfileScreenProps> = ({navigation}) => {
       }
     }
     else if(accountType === 'Hospital'){
+      console.log("======",accountType);
+      
       const response = await instance.post('/hospital/userProfile', formData);
 
       if(response.status === 200){
@@ -261,16 +260,12 @@ const UserProfileScreen:React.FC<UserProfileScreenProps> = ({navigation}) => {
     }
   };
   
+  const isDisabled = isError || isIndicatorVisible;
 
   return (
     <>
     <SafeAreaView style={style.editProfileMain}>
       
-
-      <KeyboardAvoidingView 
-          style={{ flex: 1 }}
-          behavior={Platform.OS === 'android' ? 'height' : undefined}>
-
       <ScrollView
         showsVerticalScrollIndicator={false}>      
 
@@ -290,36 +285,45 @@ const UserProfileScreen:React.FC<UserProfileScreenProps> = ({navigation}) => {
            </Text>
       </View>
 
-      <Pressable 
-         style={{elevation:15, alignItems:'center'}}
-         onPress={() => handleUserImage()}>
-      <View 
-        style={style.editProfileImagePickerView}>
-            <Image  
-               style={style.editProfileImagePicker}
-               source={{uri: imageUri ? imageUri  : 'https://cdn-icons-png.flaticon.com/512/149/149071.png'}}>              
-            </Image>
-      </View>
-      </Pressable>
-
-      <View style={style.editTextInputView}>
-        <View style={style.editTextInput}>
-          <TextInput
-            style={style.editUsername}
-            placeholder="Enter Police Station Name" 
-            value={userName}
-            onChangeText={userNamevalidation}/>
+      {loading ? (
+        <View style={style.loadingContainer}>
+          <ActivityIndicator size="large" color={getColor(accountType)} />
         </View>
-      </View>
-      {
-          isError ?  <HandleError title='please enter police station name'/> : null 
-      }
-
+       ) : (
+        <><Pressable
+                style={{ elevation: 15, alignItems: 'center' }}
+                onPress={() => handleUserImage()}>
+                <View
+                  style={style.editProfileImagePickerView}>
+                  <Image
+                    style={style.editProfileImagePicker}
+                    source={{ uri: imageUri ? imageUri : 'https://cdn-icons-png.flaticon.com/512/149/149071.png' }}>
+                  </Image>
+                </View>
+              </Pressable><View style={style.editTextInputView}>
+                  <View style={style.editTextInput}>
+                    <TextInput
+                      style={style.editUsername}
+                      placeholder="Enter Police Station Name"
+                      value={userName}
+                      onChangeText={userNamevalidation} />
+                  </View>
+                </View>
+                
+               {
+                  isError ?  <HandleError title='please enter police station name'/> : null 
+               }
+               </>
+    
+             )
+      
+      } 
+      
 
       <View style={style.saveProfileBtnView}>
         <TouchableOpacity
           style={[style.SaveProfileBtn , isError && style.SaveProfileBtnDisable , accountTypeTheme && {backgroundColor:getColor(accountTypeTheme)}]}
-          disabled={isError === true}
+          disabled={isDisabled}
           onPress={() => handleSaveProfile()}>
           <View style={style.btnView}>
           {
@@ -334,10 +338,6 @@ const UserProfileScreen:React.FC<UserProfileScreenProps> = ({navigation}) => {
       </View>
  
       </ScrollView>
-     
-      </KeyboardAvoidingView>
-
-      
     </SafeAreaView>
     {isImageSelectionSheetVisible && (
       <ImagePickerSheet
@@ -347,6 +347,7 @@ const UserProfileScreen:React.FC<UserProfileScreenProps> = ({navigation}) => {
     </>
   );
 };
+
 
 const style = StyleSheet.create({
   editProfileMain: {
@@ -421,6 +422,11 @@ const style = StyleSheet.create({
     color: 'white',
     fontSize: 18,
     fontWeight: '700',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });
 

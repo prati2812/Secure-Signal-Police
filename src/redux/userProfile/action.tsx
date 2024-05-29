@@ -17,7 +17,7 @@ export const ADD_ACCOUNT_TYPE= 'ADD_ACCOUNT_TYPE';
 
 export const addUserName = (userId : string | undefined , accountType: string | undefined) => {
 
-    return async (dispatch:Dispatch) : Promise<void> => {
+    return async (dispatch:Dispatch)  => {
                  
         
         

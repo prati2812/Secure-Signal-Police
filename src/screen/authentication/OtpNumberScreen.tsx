@@ -118,6 +118,7 @@ const OtpNumberScreen: React.FC<OtpNumberScreenProps> = ({navigation}) => {
     }
   };
   
+  const isDisabled = isError || isIndicatorVisible;
     
     
   return (
@@ -169,19 +170,11 @@ const OtpNumberScreen: React.FC<OtpNumberScreenProps> = ({navigation}) => {
         </View>
       ) : null}
 
-            <View style={styles.otpNumberResendCodeStyle}>
-              <View style={styles.otpNumberResendCodeText}>
-                <Text style={styles.otpNumberResendCode}>Resend Code</Text>
-              </View>
-              <View style={styles.otpNumberResendCodeTextTimer}>
-                <Text style={styles.otpNumberResendCodeTimer}>00:30</Text>
-              </View>
-            </View>
             <View style={styles.verifyCodeBtnView}>
               <TouchableOpacity 
                    style={[styles.verifyBtnCode , isError && styles.verifyCodeBtnDisable , accountType && {backgroundColor:getColor(accountType)}]} 
                    onPress={handleOtpNumber}
-                   disabled={isError}>
+                   disabled={isDisabled}>
                 <View style={styles.btnView}>
                   {
                     isIndicatorVisible ? <ActivityIndicator size={25} color={'white'}/> 

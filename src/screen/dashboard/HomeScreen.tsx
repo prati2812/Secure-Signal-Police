@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { Text, View, StyleSheet, StatusBar, ScrollView, Platform, PermissionsAndroid } from 'react-native';
+import { Text, View, StyleSheet, StatusBar, ScrollView, Platform, PermissionsAndroid, ActivityIndicator, FlatList } from 'react-native';
 import CustomHeader from '../../components/CustomHeader';
 import { addToken, addUserName } from '../../redux/userProfile/action';
 import { Dispatch, useEffect, useState } from 'react';
@@ -22,6 +22,7 @@ const HomeScreen:React.FC<HomeScreenProps> = ({navigation}) => {
    const dispatch = useDispatch(); 
    const userId = firebase.auth().currentUser?.uid;
    const [token , setToken] = useState<string | null>(null); 
+   const [loading, setLoading] = useState(true);
    const complaints = useSelector((state:any) => state.complaint.complaints);
    const notificationReadStatus = useSelector((state: any) => state.notification.notificationAllReadOrNot);
    const accountType = useSelector((state: any) => state.userProfile.accountType);
@@ -54,7 +55,9 @@ const HomeScreen:React.FC<HomeScreenProps> = ({navigation}) => {
    useEffect(() => {
     if(accountType){
       dispatchStore(addUserName(userId , accountType));
-      dispatchStore(fetchComplaints(userId , accountType));
+      dispatchStore(fetchComplaints(userId, accountType))
+        .then(() => setLoading(false))
+        .catch(() => setLoading(false));
     } 
   },[accountType]);
 
@@ -108,33 +111,46 @@ const HomeScreen:React.FC<HomeScreenProps> = ({navigation}) => {
     }
   };
 
+  const renderComplaint = ({ item }: { item: any }) => (
+    <ComplaintsCard
+      icon={'person'}
+      message={item.complaints.complaint.trim()}
+      time={
+        new Date(item.complaints.createdAt).toLocaleDateString('en-GB') +
+        ' ' +
+        new Date(item.complaints.createdAt).toLocaleTimeString()
+      }
+      color={getColor(accountType)}
+      isRead={true}
+      handleDetails={() => handleDetails(item)}
+    />
+  );
+
   return (
     <View style={styles.container}>
       <StatusBar backgroundColor={getColor(accountType)} />
       <HomeCustomHeader name={'Home'} icon={accountType === 'PoliceStation'  ? 'map'  : ''} call={handleLocationHistory} isRead={notificationReadStatus}/>
 
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{paddingTop:20, paddingBottom:10}}>
-
-        {complaints.length > 0 ?
-          complaints.map((item: any, index: number) => {
-            return (
-              <ComplaintsCard
-                key={index}
-                icon={'person'}
-                message={item.complaints.complaint}
-                time={new Date(item.complaints.createdAt).toLocaleDateString()+" "+new Date(item.complaints.createdAt).toLocaleTimeString()}
-                color={getColor(accountType)}
-                isRead={true}
-                handleDetails={() => handleDetails(item)}
-              />
-            );
-          }) : <View style={{alignItems:'center'}}>
-                      <Text style={{fontSize:25 , color:'black' , fontWeight:'700'}}>No Complaint</Text>
-              </View>
+      {loading ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={getColor(accountType)} />
+        </View>
+      ) : (
+        <FlatList
+          data={complaints.sort((a: { complaints: { createdAt: string } }, b: { complaints: { createdAt: string } }) =>
+            new Date(b.complaints.createdAt).getTime() - new Date(a.complaints.createdAt).getTime()
+          )}
+          renderItem={renderComplaint}
+          keyExtractor={(item, index) => index.toString()}
+          contentContainerStyle={{ paddingTop: 20, paddingBottom: 10 }}
+          ListEmptyComponent={
+            <View style={{ alignItems: 'center' }}>
+              <Text style={{ fontSize: 25, color: 'black', fontWeight: '700' }}>No Complaint</Text>
+            </View>
           }
-      </ScrollView>
+          showsVerticalScrollIndicator={false}
+        />
+      )}
     </View>
   );
 };
@@ -144,7 +160,12 @@ const styles = StyleSheet.create({
     container: {
         flex:1,
         backgroundColor:'white'
-    }
+    },
+    loadingContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
 });
 
 export default HomeScreen;

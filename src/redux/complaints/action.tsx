@@ -10,18 +10,19 @@ export const fetchComplaints = (userId:string | undefined , accountType: string 
     return async(dispatch:Dispatch) => {
         try{
             if(accountType === 'PoliceStation'){
-                const response = await instance.post('/fetchUserComplaint',{userId});
-
+                const response = await instance.post("/fetchUserComplaint", {userId});
+                  
                 if (response.status === 200) {
                     const complaintsData = await response.data;
                    
-                    
+                    console.log("=========",complaintsData);
                     dispatch({
                         type:COMPLAINTS_DATA,
                         payload:complaintsData,
                     })
                                     
                 }
+                                    
             }
             else if(accountType === 'Hospital'){
                 const response = await instance.post('/hospital/fetchUserComplaints',{userId});
@@ -29,7 +30,7 @@ export const fetchComplaints = (userId:string | undefined , accountType: string 
                 if (response.status === 200) {
                     const complaintsData = await response.data;
                    
-                    
+                    console.log("=========",complaintsData);
                     dispatch({
                         type:COMPLAINTS_DATA,
                         payload:complaintsData,

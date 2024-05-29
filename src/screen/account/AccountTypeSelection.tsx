@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as React from 'react';
 import { useState } from 'react';
-import { Text, View, StyleSheet, Pressable, TouchableOpacity } from 'react-native';
+import { Text, View, StyleSheet, Pressable, TouchableOpacity, StatusBar } from 'react-native';
 import { useDispatch } from 'react-redux';
 import { addAccountType } from '../../redux/userProfile/action';
 
@@ -31,6 +31,7 @@ const AccountTypeSelection:React.FC<AccountTypeSelectionProps> = ({navigation}) 
 
   return (
     <View style={styles.container}>
+      <StatusBar backgroundColor={'white'}/>
       <View style={styles.selectionTypeView}>
         <Text style={styles.selectionTypeText}>
           Select Your Registration Type
