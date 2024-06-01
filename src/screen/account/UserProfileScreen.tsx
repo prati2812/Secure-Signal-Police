@@ -5,7 +5,7 @@ import Icon from 'react-native-vector-icons/MaterialIcons';
 import HandleError from '../../hook/useError';
 import ImagePickerSheet from '../../components/ImagePickerSheet';
 import { useDispatch, useSelector } from 'react-redux';
-import { addAccountType, addUserName } from '../../redux/userProfile/action';
+import { addAccountType, addUserName, setProfileCompleted } from '../../redux/userProfile/action';
 import { firebase } from '@react-native-firebase/auth';  
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Geolocation from 'react-native-geolocation-service';
@@ -159,13 +159,10 @@ const UserProfileScreen:React.FC<UserProfileScreenProps> = ({navigation}) => {
       const response = await instance.post('/userProfile', formData);
 
       if(response.status === 200){
-        const responseData = await response.data;
-        const {token , imageUrl} = responseData;
-        AsyncStorage.setItem('token' , token);
-              
+        AsyncStorage.setItem("profileExist", "true");
+        dispatch(setProfileCompleted(true));         
         setIndicatorVisible(false);
-    
-        navigation.navigate('TabNavigator') 
+        navigation.navigate('HomeScreen') 
       }
       else{
          setIndicatorVisible(false);
@@ -178,13 +175,11 @@ const UserProfileScreen:React.FC<UserProfileScreenProps> = ({navigation}) => {
       const response = await instance.post('/hospital/userProfile', formData);
 
       if(response.status === 200){
-        const responseData = await response.data;
-        const {token , imageUrl} = responseData;
-        AsyncStorage.setItem('token' , token);
-              
+        AsyncStorage.setItem("profileExist", "true");
+        dispatch(setProfileCompleted(true));         
         setIndicatorVisible(false);
     
-        navigation.navigate('TabNavigator') 
+        navigation.navigate('HomeScreen') 
       }
       else{
          setIndicatorVisible(false);
@@ -195,13 +190,13 @@ const UserProfileScreen:React.FC<UserProfileScreenProps> = ({navigation}) => {
       const response = await instance.post('/userProfile', formData);
 
       if(response.status === 200){
-        const responseData = await response.data;
-        const {token , imageUrl} = responseData;
-        AsyncStorage.setItem('token' , token);
+        AsyncStorage.setItem("profileExist", "true");
+        dispatch(setProfileCompleted(true));         
+        setIndicatorVisible(false);
               
         setIndicatorVisible(false);
     
-        navigation.navigate('TabNavigator') 
+        navigation.navigate('HomeScreen'); 
       }
       else{
          setIndicatorVisible(false);
@@ -265,42 +260,41 @@ const UserProfileScreen:React.FC<UserProfileScreenProps> = ({navigation}) => {
   return (
     <>
     <SafeAreaView style={style.editProfileMain}>
-      
-      <ScrollView
-        showsVerticalScrollIndicator={false}>      
-
-      <View 
-        style={style.editProfileIconView}>
-        <TouchableOpacity 
-          style={style.closeIcon} 
-          onPress={() => handleCloseApp()}>
-            <Icon name="close" size={30} color={'black'} />
-        </TouchableOpacity>
-      </View>
-
-      <View 
-        style={style.editProfileTextView}>
-           <Text style={style.editText}>
-                Edit Profile
-           </Text>
-      </View>
-
-      {loading ? (
+    {loading ? (
         <View style={style.loadingContainer}>
           <ActivityIndicator size="large" color={getColor(accountType)} />
         </View>
        ) : (
-        <><Pressable
-                style={{ elevation: 15, alignItems: 'center' }}
-                onPress={() => handleUserImage()}>
-                <View
-                  style={style.editProfileImagePickerView}>
-                  <Image
-                    style={style.editProfileImagePicker}
-                    source={{ uri: imageUri ? imageUri : 'https://cdn-icons-png.flaticon.com/512/149/149071.png' }}>
-                  </Image>
-                </View>
-              </Pressable><View style={style.editTextInputView}>
+        
+
+      <>
+
+      <ScrollView
+        showsVerticalScrollIndicator={false}>      
+
+        <View
+                style={style.editProfileIconView}>
+                <TouchableOpacity
+                  style={style.closeIcon}
+                  onPress={() => handleCloseApp()}>
+                  <Icon name="close" size={30} color={'black'} />
+                </TouchableOpacity>
+              </View><View
+                style={style.editProfileTextView}>
+                  <Text style={style.editText}>
+                    Edit Profile
+                  </Text>
+                </View><Pressable
+                  style={{ elevation: 15, alignItems: 'center' }}
+                  onPress={() => handleUserImage()}>
+                  <View
+                    style={style.editProfileImagePickerView}>
+                    <Image
+                      style={style.editProfileImagePicker}
+                      source={{ uri: imageUri ? imageUri : 'https://cdn-icons-png.flaticon.com/512/149/149071.png' }}>
+                    </Image>
+                  </View>
+                </Pressable><View style={style.editTextInputView}>
                   <View style={style.editTextInput}>
                     <TextInput
                       style={style.editUsername}
@@ -313,11 +307,9 @@ const UserProfileScreen:React.FC<UserProfileScreenProps> = ({navigation}) => {
                {
                   isError ?  <HandleError title='please enter police station name'/> : null 
                }
-               </>
-    
-             )
+              
       
-      } 
+      
       
 
       <View style={style.saveProfileBtnView}>
@@ -336,8 +328,12 @@ const UserProfileScreen:React.FC<UserProfileScreenProps> = ({navigation}) => {
           </View>
         </TouchableOpacity>
       </View>
- 
+      
+     
       </ScrollView>
+      </>
+    )
+    }  
     </SafeAreaView>
     {isImageSelectionSheetVisible && (
       <ImagePickerSheet

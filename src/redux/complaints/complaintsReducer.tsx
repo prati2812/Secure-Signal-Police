@@ -15,7 +15,6 @@ const complaintReducer = (state = inintialState , action:{type:any , payload:any
             }
         
         case COMPLAINT:
-            console.log("=============" , action.payload);
             return{
                 ...state,
                 complaint:action.payload,

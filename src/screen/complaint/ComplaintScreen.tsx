@@ -1,12 +1,15 @@
 import * as React from 'react';
-import { Text, View, StyleSheet, StatusBar, ScrollView, Image, Pressable } from 'react-native';
+import { Text, View, StyleSheet, StatusBar, ScrollView, Image, Pressable, ActivityIndicator } from 'react-native';
 import CustomHeader from '../../components/CustomHeader';
 import { useSelector } from 'react-redux';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import base64 from 'base64-js';
 import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { Modal } from 'react-native-paper';
+import { firebase} from '@react-native-firebase/storage';
+import instance from '../../axios/axiosInstance';
+
 
 interface ComplaintScreenProps {
     navigation:any;  
@@ -16,9 +19,48 @@ const ComplaintScreen:React.FC<ComplaintScreenProps> = ({navigation}) => {
  const complaintData = useSelector((state:any) => state.complaint.complaint);
  const accountType = useSelector((state: any) => state.userProfile.accountType);
  const [visible, setVisible] = React.useState(false);
- const [imageUri , setImageUri] = React.useState<string | null>('');
+ const [imageUris, setImageUris] = React.useState<string[]>([]);
+ const [imageUri , setImageUri] = React.useState<string | undefined>();
+ const [loading , setLoading] = React.useState(true);
+ const [isCompleted , setCompletedButton] = useState(false);
+ const [isNotCompleted , setNotCompletedButton] = useState(false);
+ const [isStatus , setStatus] = useState('');
+ const userId = complaintData.complaints.complainerId;
+ const policeStationId = complaintData.complaints.nearestPoliceStationId;
+ const hospitalId = complaintData.complaints.nearestHospitalId;
+ const complaintId = complaintData.complaints.complaintId;
+ const isInjured = complaintData.complaints.isInjured;
+   
 
-const showModal = (imageUrl : string) => {
+
+ useEffect(() => {
+     imageDownload();
+          
+ },[]);
+
+ const imageDownload = async() => {
+  try {
+    const imagePaths = complaintData.complaints.complaintImage.map((image: string) =>
+      image.replace('https://storage.googleapis.com/signal-55ec5.appspot.com/',''),
+    );
+
+    const imageUriPromises = imagePaths.map(async (filePath: string | undefined) => {
+      const url = await firebase.storage().ref(filePath).getDownloadURL();
+      return url;
+    });
+
+    const imageUris = await Promise.all(imageUriPromises);
+    setImageUris(imageUris);
+    setLoading(false);
+  } catch (error) {
+    setLoading(false);
+  } 
+   
+
+ }
+ 
+
+const showModal = (imageUrl : string|undefined) => {
   setVisible(true)
   setImageUri(imageUrl);
 };
@@ -35,6 +77,68 @@ const hideModal = () => setVisible(false);
     return '#af952e';
   }
 };
+
+const handleCompleted = () => {
+  setCompletedButton(true);
+  setNotCompletedButton(false);
+  setStatus("Completed");
+}
+
+const handleNotCompleted = () => {
+ setNotCompletedButton(true);
+ setCompletedButton(false);
+ setStatus("Not Completed");
+}
+
+const handleSave = async() => {
+  const newStatus = isStatus;
+
+  
+  if(accountType === "Hospital"){
+    const response = await instance.put("/hospital/updateComplaintStatus" , 
+    {userId, policeStationId,hospitalId,complaintId,isInjured , newStatus});
+ 
+   
+   if(response.status === 200){
+      const title = "Complaint Status Update";
+      const body = "Your complaint has been updated by the hospital. Check the app for more details."
+      const response = await instance.post("/hospital/sendNotificationComplainer" , {userId , title , body});
+      if(response.status === 200){
+         console.log("notification send successfully");
+      }
+      navigation.goBack();
+   }
+   else{
+     console.log("problem occured");
+     
+   }   
+  }
+  else if(accountType === "PoliceStation"){
+     const response = await instance.put("/policeStation/updateComplaintStatus",
+     {userId, policeStationId,hospitalId,complaintId,isInjured , newStatus});
+
+     if(response.status === 200){
+      const title = "Complaint Status Update";
+      const body = "Your complaint has been updated by the Police Station. Check the app for more details."
+      const response = await instance.post("/policeStation/Notification/sendNotificationComplainer" , {userId , title , body});
+      if(response.status === 200){
+         console.log("notification send successfully");
+      }
+      navigation.goBack();
+     }
+     else{
+       console.log("problem occured");
+       
+     } 
+
+
+  }
+
+
+   
+}
+
+
  
   return (
     <>
@@ -44,11 +148,18 @@ const hideModal = () => setVisible(false);
           name={'Complaint Preview'}
           backIcon="keyboard-backspace"
           backCall={() => navigation.goBack()}
+          icon={isStatus.length === 0 ? '' : 'check'}
+          call={handleSave}
         />
 
+       {loading ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={getColor(accountType)} />
+        </View>
+      ) : ( 
         <ScrollView
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={{paddingTop: 20, paddingBottom: 10}}>
+          contentContainerStyle={{paddingTop: 20, paddingBottom: 20}}>
           <View style={styles.complaintMessageView}>
             <View style={styles.complaintMessage}>
               <Text style={styles.complaintTitle}>{`Complainer : `}</Text>
@@ -76,38 +187,21 @@ const hideModal = () => setVisible(false);
             </View>
           </View>
 
-          {complaintData.complaintsImageBuffer !== undefined && (
+          {complaintData.complaints.complaintImage && (
             <View style={styles.complaintMessageView}>
               <Text style={styles.complaintTitle}>{`Incident Photos : `}</Text>
               <View style={styles.complaintImageView}>
-                {complaintData.complaintsImageBuffer !== undefined &&
-                  complaintData.complaintsImageBuffer.map(
-                    (item: any, index: number) => {
-                      const base64Image = base64.fromByteArray(
-                        item.imageBuffer.data,
-                      );
-                      const imageUrl = `data:image/jpeg;base64,${base64Image}`;
-
-                      return (
-                        <Pressable
-                          key={index}
-                          onPress={() => showModal(imageUrl)}>
-                          <View style={styles.complaintImage} key={index}>
-                            <Image
-                              key={index}
-                              source={{
-                                uri: imageUrl
-                                  ? imageUrl
-                                  : 'https://cdn-icons-png.flaticon.com/512/149/149071.png',
-                              }}
-                              style={{flex: 1}}
-                              resizeMode="cover"
-                            />
-                          </View>
-                        </Pressable>
-                      );
-                    },
-                  )}
+                {imageUris.map((uri, index) => (
+                  <Pressable key={index} onPress={() => showModal(uri)}>
+                    <View style={styles.complaintImage}>
+                      <Image
+                        source={{uri}}
+                        style={{flex: 1}}
+                        resizeMode="cover"
+                      />
+                    </View>
+                  </Pressable>
+                ))}
               </View>
             </View>
           )}
@@ -150,7 +244,30 @@ const hideModal = () => setVisible(false);
               </Pressable>
             </View>
           </View>
+
+          <View style={styles.questionOptionSelectionView}>
+             
+             <Pressable onPress={() => handleCompleted()} style={{flex:1}}>
+              <View style={[styles.questionOptionView , isCompleted && {backgroundColor:getColor(accountType)}]}>
+                   <Text style={[styles.option , isCompleted && styles.activateOption]}>
+                         Completed
+                   </Text>
+              </View>
+              </Pressable>
+
+              <Pressable onPress={()=> handleNotCompleted()} style={{flex:1}}>
+              <View style={[styles.questionOptionView , isNotCompleted && {backgroundColor:getColor(accountType)}]}>
+                   <Text style={[styles.option , isNotCompleted && styles.activateOption]}>
+                         Not Completed 
+                   </Text>
+              </View>
+              </Pressable>
+
+          </View>
+
+
         </ScrollView>
+      )}
       </View>
       {
         <>
@@ -159,11 +276,7 @@ const hideModal = () => setVisible(false);
             onDismiss={hideModal}
             contentContainerStyle={styles.containerStyle}>
             <Image
-              source={{
-                uri: imageUri
-                  ? imageUri
-                  : 'https://cdn-icons-png.flaticon.com/512/149/149071.png',
-              }}
+              source={{uri: imageUri}}
               style={{flex: 1}}
               resizeMode="cover"
             />
@@ -210,7 +323,7 @@ const styles = StyleSheet.create({
         gap:10 , 
         alignItems:'center' ,  
         flexWrap:'wrap', 
-        marginLeft:'auto', 
+        marginLeft:10, 
         marginTop:10,
     },
     complaintImage:{
@@ -226,7 +339,39 @@ const styles = StyleSheet.create({
         marginLeft:30,
         marginRight:30,
         height:'60%',
-    }
+    },
+    loadingContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    questionOptionSelectionView:{
+      flexDirection:'row',
+      marginTop:20,
+      marginLeft:15,
+      marginRight:15,
+      gap:10,
+    },
+    questionOptionView:{
+      flex:1,
+      height:60,
+      backgroundColor:'lightgray',
+      borderRadius:25,
+      alignItems:'center',
+      justifyContent:'center',
+      elevation:5,
+    },
+    option:{
+        color:'black',
+        fontSize:20,
+        fontWeight:'500',
+    },
+    activateOptionView:{
+      backgroundColor:'#3ebb6e'
+    },
+    activateOption:{
+      color:'white'
+    },
 });
   
 export default ComplaintScreen;

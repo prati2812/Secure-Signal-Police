@@ -14,8 +14,8 @@ export const fetchComplaints = (userId:string | undefined , accountType: string 
                   
                 if (response.status === 200) {
                     const complaintsData = await response.data;
-                   
-                    console.log("=========",complaintsData);
+                    console.log("=======" , complaintsData);
+                    
                     dispatch({
                         type:COMPLAINTS_DATA,
                         payload:complaintsData,
@@ -30,7 +30,6 @@ export const fetchComplaints = (userId:string | undefined , accountType: string 
                 if (response.status === 200) {
                     const complaintsData = await response.data;
                    
-                    console.log("=========",complaintsData);
                     dispatch({
                         type:COMPLAINTS_DATA,
                         payload:complaintsData,

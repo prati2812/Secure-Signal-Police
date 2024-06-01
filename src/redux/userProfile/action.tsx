@@ -10,6 +10,7 @@ export const USER_IMAGE_RESPONSE = 'USER_IMAGE_RESPONSE';
 export const ADD_IMAGE_URI = 'ADD_IMAGE_URI';
 export const ADD_TOKEN = 'ADD_TOKEN';
 export const ADD_ACCOUNT_TYPE= 'ADD_ACCOUNT_TYPE';
+export const IS_PROFILE_COMPLETED = 'IS_PROFILE_COMPLETED';
 
 
 
@@ -93,3 +94,9 @@ export const addAccountType = (accountType : string | null) => ({
     type: ADD_ACCOUNT_TYPE,
     payload: accountType,
 });
+
+
+export const setProfileCompleted = (isProfile: boolean | null) => ({
+    type:IS_PROFILE_COMPLETED,
+    payload:isProfile,
+})

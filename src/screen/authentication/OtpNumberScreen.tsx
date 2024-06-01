@@ -6,6 +6,8 @@ import HandleError from '../../hook/useError';
 import { useSelector } from 'react-redux';
 import auth from '@react-native-firebase/auth';
 import { requestUserPermission } from '../../utils/NotificationService';
+import instance from '../../axios/axiosInstance';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const width = Dimensions.get('screen').width;
 const height = Dimensions.get('screen').height;
@@ -20,7 +22,9 @@ const OtpNumberScreen: React.FC<OtpNumberScreenProps> = ({navigation}) => {
   const inputRef = useRef<TextInput>(null);
   const [otp, setOtp] = useState('');
   const [isError, setIsError] = useState(false);
+  const [timeLeft, setTimeLeft] = useState(30);
   const [isIndicatorVisible, setIndicatorVisible] = useState(false);
+  const [isResendEnabled, setIsResendEnabled] = useState(false);
   const phoneNumber = useSelector((state : any) => state.credentials.phoneNumber);
   const verificationId = useSelector((state:any) => state.credentials.verificationId);
   const accountType = useSelector((state: any) => state.userProfile.accountType); 
@@ -30,6 +34,26 @@ const OtpNumberScreen: React.FC<OtpNumberScreenProps> = ({navigation}) => {
     requestUserPermission();
   },[]);
   
+  useEffect(() => {
+    if (timeLeft === 0) {
+      setIsResendEnabled(true);
+      return;
+    }
+
+    const timerId = setTimeout(() => {
+      setTimeLeft(timeLeft - 1);
+    }, 1000);
+
+    return () => clearTimeout(timerId);
+  }, [timeLeft]);
+
+  const handleResendCode = async() => {
+    if (!isResendEnabled) return;
+     await auth().signInWithPhoneNumber(phoneNumber,true);
+    setTimeLeft(30);
+    setIsResendEnabled(false);
+  };
+
   const handleOtpNumber = async() => {
     
     try
@@ -42,7 +66,31 @@ const OtpNumberScreen: React.FC<OtpNumberScreenProps> = ({navigation}) => {
   
        setIndicatorVisible(true); 
        const credential = auth.PhoneAuthProvider.credential(verificationId , otp);
-       await auth().signInWithCredential(credential);
+       const dataa = await auth().signInWithCredential(credential);
+       const userId = dataa.user.uid;
+       const phoneNumber = dataa.user.phoneNumber;
+
+       if(accountType === "PoliceStation"){
+        const response = await instance.post('/policeStation/userAuthentication', {
+          userId,
+          phoneNumber,
+        });
+        if (response.status === 201) {
+          const responseData = await response.data;
+          const {token} = responseData;
+          AsyncStorage.setItem('token', token);
+        }   
+       }
+       else if(accountType === "Hospital"){
+        const response = await instance.post("/hospital/userAuthentication" , {userId , phoneNumber});
+        if(response.status === 201){
+         const responseData = await response.data;
+         const {token} = responseData;
+         AsyncStorage.setItem('token' , token);
+        } 
+       } 
+       
+       
        setIndicatorVisible(false);
        navigation.navigate('UserProfile');
     }
@@ -169,6 +217,18 @@ const OtpNumberScreen: React.FC<OtpNumberScreenProps> = ({navigation}) => {
           <HandleError title="please enter the code" />
         </View>
       ) : null}
+           <View style={styles.otpNumberResendCodeStyle}>
+              <TouchableOpacity
+              onPress={handleResendCode}
+              disabled={!isResendEnabled}>
+              <View style={styles.otpNumberResendCodeText}>
+                <Text style={[styles.otpNumberResendCode , isResendEnabled && {color:getColor(accountType)}]}>Resend Code</Text>
+              </View>
+              </TouchableOpacity>
+              <View style={styles.otpNumberResendCodeTextTimer}>
+                <Text style={[styles.otpNumberResendCodeTimer , !isResendEnabled && {color:getColor(accountType)}]}>{`00:${timeLeft < 10 ? `0${timeLeft}` : timeLeft}`}</Text>
+              </View>
+            </View> 
 
             <View style={styles.verifyCodeBtnView}>
               <TouchableOpacity 

@@ -3,12 +3,14 @@ import { NavigationContainer } from '@react-navigation/native'
 import AuthStack from "./AuthStack";
 import { useDispatch, useSelector } from "react-redux";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { addAccountType, addToken } from "../redux/userProfile/action";
+import { addAccountType, addToken, setProfileCompleted } from "../redux/userProfile/action";
 import NavigationStack from "./NavigationStack";
 
 
 const AppStack : React.FC = () => {
   const token = useSelector((state: any) => state.userProfile.token);
+  const isProfile = useSelector((state:any) => state.userProfile.isProfileCompleted);
+   
   const dispatch = useDispatch(); 
 
   const getToken = async() => {
@@ -22,6 +24,14 @@ const AppStack : React.FC = () => {
     if(AccountType){
       dispatch(addAccountType(AccountType));
     }
+
+    const profileExist = await AsyncStorage.getItem("profileExist");
+    if(profileExist){
+       dispatch(setProfileCompleted(true));
+    }
+    else{
+      dispatch(setProfileCompleted(false));
+    }
     
   }
   
@@ -33,7 +43,7 @@ const AppStack : React.FC = () => {
     return(
       <NavigationContainer>
         {
-          token ? <NavigationStack/> : <AuthStack/>
+          token && isProfile ? <NavigationStack/> : <AuthStack/>
         }
       </NavigationContainer>
     )

@@ -84,19 +84,14 @@ const LocationHistory:React.FC<LocationHistoryProps> = ({navigation}) => {
                       message={`Live Location Shared by a ${item.senderName}.`}
                       time={item.timeStamp}
                       color={'#af952e'}
-                      isRead={
-                        notificationReadStatus !== null &&
+                      isRead={notificationReadStatus !== null &&
                         notificationReadStatus === true
-                          ? true
-                          : item.isRead
-                      }
-                      handleDetails={() =>
-                        handleNotificationRead(
-                          item.notification_id,
-                          item.senderId,
-                        )
-                      }
-                    />
+                        ? true
+                        : item.isRead}
+                      handleDetails={() => handleNotificationRead(
+                        item.notification_id,
+                        item.senderId
+                      )}                     />
                   );
                 },
               )}

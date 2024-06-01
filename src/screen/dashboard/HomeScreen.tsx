@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { Text, View, StyleSheet, StatusBar, ScrollView, Platform, PermissionsAndroid, ActivityIndicator, FlatList } from 'react-native';
+import { Text, View, StyleSheet, StatusBar, ScrollView, Platform, PermissionsAndroid, ActivityIndicator, FlatList, RefreshControl } from 'react-native';
 import CustomHeader from '../../components/CustomHeader';
 import { addToken, addUserName } from '../../redux/userProfile/action';
 import { Dispatch, useEffect, useState } from 'react';
@@ -23,15 +23,17 @@ const HomeScreen:React.FC<HomeScreenProps> = ({navigation}) => {
    const userId = firebase.auth().currentUser?.uid;
    const [token , setToken] = useState<string | null>(null); 
    const [loading, setLoading] = useState(true);
+   const [refreshing, setRefreshing] = useState(false);
    const complaints = useSelector((state:any) => state.complaint.complaints);
    const notificationReadStatus = useSelector((state: any) => state.notification.notificationAllReadOrNot);
    const accountType = useSelector((state: any) => state.userProfile.accountType);
-   console.log(accountType);
+  
             
 
    
    useEffect(() => {
-      getToken(); 
+      getToken();
+      requestNotificationPermission(); 
       dispatchStore(fetchLiveLocationNotificationData(userId));
    },[token]);
 
@@ -100,7 +102,7 @@ const HomeScreen:React.FC<HomeScreenProps> = ({navigation}) => {
     navigation.navigate('LocationHistory');
    }
 
-   const getColor = (accountType: string | null) => {
+  const getColor = (accountType: string | null) => {
     if (accountType === 'PoliceStation') {
       return '#af952e';
     } else if(accountType === 'Hospital'){
@@ -111,18 +113,99 @@ const HomeScreen:React.FC<HomeScreenProps> = ({navigation}) => {
     }
   };
 
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    dispatchStore(fetchComplaints(userId, accountType))
+    setRefreshing(false);
+  };
+
+
+  const getStatusIcon = (item: { complaints: { isInjured: any; complaintStatus: any; policeStationStatus: any; hospitalStatus: any; }; }) => {
+    const { isInjured, complaintStatus, policeStationStatus, hospitalStatus } = item.complaints;
+    
+
+    if (complaintStatus === 'Completed') {
+      return 'thumbs-up';
+    }
+  
+    if (complaintStatus === 'NotCompleted') {
+      return 'thumbs-down';
+    }
+  
+    if(complaintStatus === "pending" && isInjured === "No"){
+        if(!policeStationStatus){
+           return 'clock';
+        }
+        else if(policeStationStatus && (policeStationStatus === "Completed" || policeStationStatus === "Not Completed")){
+           return 'thumbs-down'; 
+        }
+    }
+    if(complaintStatus === "pending" && isInjured === "Yes"){
+       if(!policeStationStatus && !hospitalStatus){
+          return 'clock';
+       }
+       else if((policeStationStatus || hospitalStatus) && 
+            ((policeStationStatus === "Completed" || policeStationStatus === "Not Completed") || 
+              (hospitalStatus === "Completed" || hospitalStatus === "Not Completed"))){
+                 return 'thumbs-down';
+       }
+
+    }
+  
+    return 'clock'; 
+  };
+
+  const getStatusColor = (item: { complaints: { isInjured: any; complaintStatus: any; policeStationStatus: any; hospitalStatus: any; }; }) => {
+    const { isInjured, complaintStatus, policeStationStatus, hospitalStatus } = item.complaints;
+    
+
+    if (complaintStatus === 'Completed') {
+      return 'green';
+    }
+  
+    if (complaintStatus === 'NotCompleted') {
+      return 'red';
+    }
+  
+    if(complaintStatus === "pending" && isInjured === "No"){
+        if(!policeStationStatus){
+           return '#e1ad01';
+        }
+        else if(policeStationStatus && (policeStationStatus === "Completed" || policeStationStatus === "Not Completed")){
+           return 'red'; 
+        }
+    }
+    if(complaintStatus === "pending" && isInjured === "Yes"){
+       if(!policeStationStatus && !hospitalStatus){
+          return '#e1ad01';
+       }
+       else if((policeStationStatus || hospitalStatus) && 
+            ((policeStationStatus === "Completed" || policeStationStatus === "Not Completed") || 
+              (hospitalStatus === "Completed" || hospitalStatus === "Not Completed"))){
+                 return 'red';
+       }
+
+    }
+  
+    return '#e1ad01'; 
+  };
+
+
+
+
   const renderComplaint = ({ item }: { item: any }) => (
     <ComplaintsCard
       icon={'person'}
       message={item.complaints.complaint.trim()}
-      time={
-        new Date(item.complaints.createdAt).toLocaleDateString('en-GB') +
+      time={new Date(item.complaints.createdAt).toLocaleDateString('en-GB') +
         ' ' +
-        new Date(item.complaints.createdAt).toLocaleTimeString()
-      }
+        new Date(item.complaints.createdAt).toLocaleTimeString()}
       color={getColor(accountType)}
       isRead={true}
       handleDetails={() => handleDetails(item)}
+      statusIcon={getStatusIcon(item)} 
+      statusIconColor={getStatusColor(item)}
     />
   );
 
@@ -141,12 +224,18 @@ const HomeScreen:React.FC<HomeScreenProps> = ({navigation}) => {
             new Date(b.complaints.createdAt).getTime() - new Date(a.complaints.createdAt).getTime()
           )}
           renderItem={renderComplaint}
-          keyExtractor={(item, index) => index.toString()}
+          keyExtractor={(item) => item.complaints.complaintId.toString()}
           contentContainerStyle={{ paddingTop: 20, paddingBottom: 10 }}
           ListEmptyComponent={
             <View style={{ alignItems: 'center' }}>
               <Text style={{ fontSize: 25, color: 'black', fontWeight: '700' }}>No Complaint</Text>
             </View>
+          }
+          refreshControl={
+            <RefreshControl
+                refreshing={refreshing}
+                onRefresh={onRefresh}
+            />
           }
           showsVerticalScrollIndicator={false}
         />

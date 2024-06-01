@@ -10,13 +10,14 @@ interface SplashScreenProps {
 
 const SplashScreen: React.FC<SplashScreenProps> = ({navigation}) => {
   const token = useSelector((state:any) => state.userProfile.token);
+  const isProfile = useSelector((state:any) => state.userProfile.isProfileCompleted);
   const accountType = useSelector((state: any) => state.userProfile.accountType);
 
  
   
   useEffect(() => {
     const navigateToScreen = () => {
-      if (token) { 
+      if (token && isProfile) { 
         navigation.navigate('TabNavigator');
       } else { 
         navigation.navigate('AccountType');
