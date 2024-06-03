@@ -52,7 +52,7 @@ const BottomSheet:React.FC<BottomSheetProps> = ({setBottomSheetVisible}) => {
          setedittedUserName(userName);
       }     
       slideUp()
-    })
+    },[])
 
 
 

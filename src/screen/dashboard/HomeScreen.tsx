@@ -11,6 +11,8 @@ import { allNotificationReadOrNot, fetchLiveLocationNotificationData } from '../
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import HomeCustomHeader from '../../components/HomeCustomHeader';
 import store from '../../redux/store';
+import { FAB } from 'react-native-paper';
+import ComplaintFilterBottomSheet from '../../components/ComplaintFilterBottomSheet';
 
 
 
@@ -24,7 +26,9 @@ const HomeScreen:React.FC<HomeScreenProps> = ({navigation}) => {
    const [token , setToken] = useState<string | null>(null); 
    const [loading, setLoading] = useState(true);
    const [refreshing, setRefreshing] = useState(false);
+   const [isComplaintBottomSheetVisible , setComplaintBottomSheetVisible] = useState(false);
    const complaints = useSelector((state:any) => state.complaint.complaints);
+   const complaintStatus = useSelector((state:any) => state.complaint.complaintStatus);
    const notificationReadStatus = useSelector((state: any) => state.notification.notificationAllReadOrNot);
    const accountType = useSelector((state: any) => state.userProfile.accountType);
   
@@ -209,38 +213,65 @@ const HomeScreen:React.FC<HomeScreenProps> = ({navigation}) => {
     />
   );
 
+
+  const filteredComplaints = complaints.filter((item: { complaints: {
+    hospitalStatus: any;
+    policeStationStatus: any; complaintStatus:any; 
+}; }) => {
+    if (complaintStatus === 'All') return true;
+    else if(complaintStatus === "Accepted"){
+      return item.complaints.complaintStatus === "Completed" && complaintStatus === "Accepted";
+    }
+    else if(complaintStatus === "Rejected"){
+      return (item.complaints.complaintStatus === "Not Completed" || item.complaints.complaintStatus === "pending") && (item.complaints.policeStationStatus || item.complaints.hospitalStatus) && complaintStatus === "Rejected";
+    }
+    else if(complaintStatus === "Pending"){
+      return item.complaints.complaintStatus === "pending" && (!item.complaints.policeStationStatus && !item.complaints.hospitalStatus) && complaintStatus === "Pending";
+    } 
+    
+  
+  });
+
+
   return (
+    <>
     <View style={styles.container}>
       <StatusBar backgroundColor={getColor(accountType)} />
-      <HomeCustomHeader name={'Home'} icon={accountType === 'PoliceStation'  ? 'map'  : ''} call={handleLocationHistory} isRead={notificationReadStatus}/>
+      <HomeCustomHeader name={'Home'} 
+      icon={accountType === 'PoliceStation'  ? 'map'  : ''} 
+      call={handleLocationHistory} isRead={notificationReadStatus}/>
 
       {loading ? (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={getColor(accountType)} />
         </View>
       ) : (
-        <FlatList
-          data={complaints.sort((a: { complaints: { createdAt: string } }, b: { complaints: { createdAt: string } }) =>
-            new Date(b.complaints.createdAt).getTime() - new Date(a.complaints.createdAt).getTime()
-          )}
-          renderItem={renderComplaint}
-          keyExtractor={(item) => item.complaints.complaintId.toString()}
-          contentContainerStyle={{ paddingTop: 20, paddingBottom: 10 }}
-          ListEmptyComponent={
-            <View style={{ alignItems: 'center' }}>
+        <><FlatList
+            data={filteredComplaints.sort((a: { complaints: { createdAt: string; }; }, b: { complaints: { createdAt: string; }; }) => new Date(b.complaints.createdAt).getTime() - new Date(a.complaints.createdAt).getTime()
+            )}
+            renderItem={renderComplaint}
+            keyExtractor={(item) => item.complaints.complaintId.toString()}
+            contentContainerStyle={{ paddingTop: 20, paddingBottom: 10 }}
+            ListEmptyComponent={<View style={{ alignItems: 'center' }}>
               <Text style={{ fontSize: 25, color: 'black', fontWeight: '700' }}>No Complaint</Text>
-            </View>
-          }
-          refreshControl={
-            <RefreshControl
-                refreshing={refreshing}
-                onRefresh={onRefresh}
-            />
-          }
-          showsVerticalScrollIndicator={false}
-        />
+            </View>}
+            refreshControl={<RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh} />}
+            showsVerticalScrollIndicator={false} />
+            
+            <FAB
+              style={[styles.fab , accountType && {backgroundColor:getColor(accountType)}]}
+              icon="filter-outline"
+              color='white'
+              onPress={() => setComplaintBottomSheetVisible(true)} />
+        </>
       )}
     </View>
+    {
+       isComplaintBottomSheetVisible && <ComplaintFilterBottomSheet  setComplaintBottomSheetVisible={setComplaintBottomSheetVisible}/>
+    }
+    </>
   );
 };
 
@@ -254,6 +285,13 @@ const styles = StyleSheet.create({
       flex: 1,
       justifyContent: 'center',
       alignItems: 'center',
+    },
+    fab: {
+      position: 'absolute',
+      margin: 16,
+      right: 0,
+      bottom: 0,
+      borderRadius:30,
     },
 });
 

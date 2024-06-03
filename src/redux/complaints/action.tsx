@@ -5,6 +5,8 @@ import instance from "../../axios/axiosInstance";
 
 export const COMPLAINTS_DATA = 'COMPLAINTS_DATA';
 export const COMPLAINT = 'COMPLAINT';
+export const COMPLAINT_STATUS_TYPES = 'COMPLAINT_STATUS_TYPES';
+
 
 export const fetchComplaints = (userId:string | undefined , accountType: string | undefined) => {
     return async(dispatch:Dispatch) => {
@@ -46,3 +48,8 @@ export const fetchComplaints = (userId:string | undefined , accountType: string 
     }
 
 }
+
+export const addComplaintStatus = (complaintStatus:string|undefined) => ({
+    type:COMPLAINT_STATUS_TYPES,
+    payload:complaintStatus,
+})

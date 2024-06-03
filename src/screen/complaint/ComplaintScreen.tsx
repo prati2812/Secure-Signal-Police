@@ -1,12 +1,12 @@
 import * as React from 'react';
-import { Text, View, StyleSheet, StatusBar, ScrollView, Image, Pressable, ActivityIndicator } from 'react-native';
+import { Text, View, StyleSheet, StatusBar, ScrollView, Image, Pressable, ActivityIndicator, Linking } from 'react-native';
 import CustomHeader from '../../components/CustomHeader';
 import { useSelector } from 'react-redux';
 import { useEffect, useState } from 'react';
 import base64 from 'base64-js';
 import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 import Icon from 'react-native-vector-icons/MaterialIcons';
-import { Modal } from 'react-native-paper';
+import { FAB, Modal } from 'react-native-paper';
 import { firebase} from '@react-native-firebase/storage';
 import instance from '../../axios/axiosInstance';
 
@@ -18,6 +18,7 @@ interface ComplaintScreenProps {
 const ComplaintScreen:React.FC<ComplaintScreenProps> = ({navigation}) => {
  const complaintData = useSelector((state:any) => state.complaint.complaint);
  const accountType = useSelector((state: any) => state.userProfile.accountType);
+ const userName = useSelector((state : any) => state.userProfile.userName);
  const [visible, setVisible] = React.useState(false);
  const [imageUris, setImageUris] = React.useState<string[]>([]);
  const [imageUri , setImageUri] = React.useState<string | undefined>();
@@ -30,11 +31,39 @@ const ComplaintScreen:React.FC<ComplaintScreenProps> = ({navigation}) => {
  const hospitalId = complaintData.complaints.nearestHospitalId;
  const complaintId = complaintData.complaints.complaintId;
  const isInjured = complaintData.complaints.isInjured;
-   
+ const policeStationStatus = complaintData.complaints.policeStationStatus;
+ const hospitalStatus = complaintData.complaints.hospitalStatus;  
 
+ useEffect(() => {
+    if(accountType === "PoliceStation"){
+      if(policeStationStatus){
+        if(policeStationStatus === "Completed"){
+            setStatus(policeStationStatus);
+            setCompletedButton(true);
+        }
+        else if(policeStationStatus === "Not Completed"){
+           setStatus(policeStationStatus);
+           setNotCompletedButton(true);
+        }
+     }
+    }
+    else if(accountType === "Hospital"){
+       if(hospitalStatus){
+         if(hospitalStatus === "Completed"){
+           setStatus(hospitalStatus);
+           setCompletedButton(true);
+         }
+         else if(hospitalStatus === "Not Completed"){
+           setStatus(hospitalStatus);
+           setNotCompletedButton(true);
+         }
+       }
+    }
+ },[])
 
  useEffect(() => {
      imageDownload();
+     
           
  },[]);
 
@@ -104,7 +133,11 @@ const handleSave = async() => {
       const body = "Your complaint has been updated by the hospital. Check the app for more details."
       const response = await instance.post("/hospital/sendNotificationComplainer" , {userId , title , body});
       if(response.status === 200){
-         console.log("notification send successfully");
+        const senderName = userName;
+        const response = await instance.post("/hospital/complaintStatus/saveHospitalStatus" , {userId , senderName});
+        if(response.status === 200){
+           console.log("saved");
+        }
       }
       navigation.goBack();
    }
@@ -122,7 +155,12 @@ const handleSave = async() => {
       const body = "Your complaint has been updated by the Police Station. Check the app for more details."
       const response = await instance.post("/policeStation/Notification/sendNotificationComplainer" , {userId , title , body});
       if(response.status === 200){
-         console.log("notification send successfully");
+          const senderName = userName;
+          const response = await instance.post("/policeStation/Notification/complaint/savePoliceStationStatus" , {userId , senderName});
+          if(response.status === 200){
+             console.log("saved");
+             
+          }
       }
       navigation.goBack();
      }
@@ -139,6 +177,12 @@ const handleSave = async() => {
 }
 
 
+
+  const handleMap = () => {
+    Linking.openURL(`geo:${complaintData.complaints.complaintLocation.latitude},${complaintData.complaints.complaintLocation.longtitude};u=35`);
+    // navigation.navigate('LocationRoute')
+  }
+
  
   return (
     <>
@@ -152,122 +196,124 @@ const handleSave = async() => {
           call={handleSave}
         />
 
-       {loading ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={getColor(accountType)} />
-        </View>
-      ) : ( 
+      
+        <>
         <ScrollView
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={{paddingTop: 20, paddingBottom: 20}}>
-          <View style={styles.complaintMessageView}>
-            <View style={styles.complaintMessage}>
-              <Text style={styles.complaintTitle}>{`Complainer : `}</Text>
-              <Text style={styles.message}>
-                {complaintData.complaints.complaintBy}
-              </Text>
-            </View>
-          </View>
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={{ paddingTop: 20, paddingBottom: 20 }}>
+              <View style={styles.complaintMessageView}>
+                <View style={styles.complaintMessage}>
+                  <Text style={styles.complaintTitle}>{`Complainer : `}</Text>
+                  <Text style={styles.message}>
+                    {complaintData.complaints.complaintBy}
+                  </Text>
+                </View>
+              </View>
 
-          <View style={styles.complaintMessageView}>
-            <View style={styles.complaintMessage}>
-              <Text style={styles.complaintTitle}>{`Complaint : `}</Text>
-              <Text style={styles.message}>
-                {complaintData.complaints.complaint.trim()}
-              </Text>
-            </View>
-          </View>
+              <View style={styles.complaintMessageView}>
+                <View style={styles.complaintMessage}>
+                  <Text style={styles.complaintTitle}>{`Complaint : `}</Text>
+                  <Text style={styles.message}>
+                    {complaintData.complaints.complaint.trim()}
+                  </Text>
+                </View>
+              </View>
 
-          <View style={styles.complaintMessageView}>
-            <View style={styles.complaintMessage}>
-              <Text style={styles.complaintTitle}>{`IsInjured : `}</Text>
-              <Text style={styles.message}>
-                {complaintData.complaints.isInjured}
-              </Text>
-            </View>
-          </View>
+              <View style={styles.complaintMessageView}>
+                <View style={styles.complaintMessage}>
+                  <Text style={styles.complaintTitle}>{`IsInjured : `}</Text>
+                  <Text style={styles.message}>
+                    {complaintData.complaints.isInjured}
+                  </Text>
+                </View>
+              </View>
 
-          {complaintData.complaints.complaintImage && (
-            <View style={styles.complaintMessageView}>
-              <Text style={styles.complaintTitle}>{`Incident Photos : `}</Text>
-              <View style={styles.complaintImageView}>
-                {imageUris.map((uri, index) => (
-                  <Pressable key={index} onPress={() => showModal(uri)}>
-                    <View style={styles.complaintImage}>
-                      <Image
-                        source={{uri}}
-                        style={{flex: 1}}
-                        resizeMode="cover"
-                      />
+              {complaintData.complaints.complaintImage && (
+                <View style={styles.complaintMessageView}>
+                  <Text style={styles.complaintTitle}>{`Incident Photos : `}</Text>
+                  {loading ? (
+                  <View style={styles.loadingContainer}>
+                      <ActivityIndicator size="large" color={getColor(accountType)} />
+                  </View>
+                  ) : (   
+                  <View style={styles.complaintImageView}>
+                    {imageUris.map((uri, index) => (
+                      <Pressable key={index} onPress={() => showModal(uri)}>
+                        <View style={styles.complaintImage}>
+                          <Image
+                            source={{ uri }}
+                            style={{ flex: 1 }}
+                            resizeMode="cover" />
+                        </View>
+                      </Pressable>
+                    ))}
+                  </View>
+                   )}
+                </View>
+
+              )}
+
+              <View style={styles.complaintMessageView}>
+                <Text style={styles.complaintTitle}>{`Incident Location : `}</Text>
+                <View style={{ marginTop: 10 }}>
+                  <Pressable onPress={() => handleMap()}>
+                    <View
+                      style={{
+                        width: '100%',
+                        height: 300,
+                        borderRadius: 10,
+                        overflow: 'hidden',
+                      }}>
+                      <MapView
+                        style={{ flex: 1 }}
+                        provider={PROVIDER_GOOGLE}
+                        scrollEnabled={false}
+                        zoomEnabled={true}
+                        region={{
+                          latitude: complaintData.complaints.complaintLocation.latitude,
+                          longitude: complaintData.complaints.complaintLocation.longtitude,
+                          latitudeDelta: 0.015,
+                          longitudeDelta: 0.0121,
+                        }}>
+                        <Marker
+                          coordinate={{
+                            latitude: complaintData.complaints.complaintLocation.latitude,
+                            longitude: complaintData.complaints.complaintLocation.longtitude,
+                          }}>
+                          <Icon name="location-pin" size={40} color={'#5F4C24'} />
+                        </Marker>
+                      </MapView>
                     </View>
                   </Pressable>
-                ))}
-              </View>
-            </View>
-          )}
-
-          <View style={styles.complaintMessageView}>
-            <Text style={styles.complaintTitle}>{`Incident Location : `}</Text>
-            <View style={{marginTop: 10}}>
-              <Pressable onPress={() => navigation.navigate('LocationRoute')}>
-                <View
-                  style={{
-                    width: '100%',
-                    height: 300,
-                    borderRadius: 10,
-                    overflow: 'hidden',
-                  }}>
-                  <MapView
-                    style={{flex: 1}}
-                    provider={PROVIDER_GOOGLE}
-                    scrollEnabled={false}
-                    zoomEnabled={true}
-                    region={{
-                      latitude:
-                        complaintData.complaints.complaintLocation.latitude,
-                      longitude:
-                        complaintData.complaints.complaintLocation.longtitude,
-                      latitudeDelta: 0.015,
-                      longitudeDelta: 0.0121,
-                    }}>
-                    <Marker
-                      coordinate={{
-                        latitude:
-                          complaintData.complaints.complaintLocation.latitude,
-                        longitude:
-                          complaintData.complaints.complaintLocation.longtitude,
-                      }}>
-                      <Icon name="location-pin" size={40} color={'#5F4C24'} />
-                    </Marker>
-                  </MapView>
                 </View>
-              </Pressable>
-            </View>
-          </View>
-
-          <View style={styles.questionOptionSelectionView}>
-             
-             <Pressable onPress={() => handleCompleted()} style={{flex:1}}>
-              <View style={[styles.questionOptionView , isCompleted && {backgroundColor:getColor(accountType)}]}>
-                   <Text style={[styles.option , isCompleted && styles.activateOption]}>
-                         Completed
-                   </Text>
               </View>
-              </Pressable>
 
-              <Pressable onPress={()=> handleNotCompleted()} style={{flex:1}}>
-              <View style={[styles.questionOptionView , isNotCompleted && {backgroundColor:getColor(accountType)}]}>
-                   <Text style={[styles.option , isNotCompleted && styles.activateOption]}>
-                         Not Completed 
-                   </Text>
+              <View style={styles.questionOptionSelectionView}>
+
+                <Pressable onPress={() => handleCompleted()} style={{ flex: 1 }}>
+                  <View style={[styles.questionOptionView, isCompleted && { backgroundColor: getColor(accountType) }]}>
+                    <Text style={[styles.option, isCompleted && styles.activateOption]}>
+                      Completed
+                    </Text>
+                  </View>
+                </Pressable>
+
+                <Pressable onPress={() => handleNotCompleted()} style={{ flex: 1 }}>
+                  <View style={[styles.questionOptionView, isNotCompleted && { backgroundColor: getColor(accountType) }]}>
+                    <Text style={[styles.option, isNotCompleted && styles.activateOption]}>
+                      Not Completed
+                    </Text>
+                  </View>
+                </Pressable>
+
               </View>
-              </Pressable>
-
-          </View>
 
 
-        </ScrollView>
-      )}
+            </ScrollView>
+            
+        
+        </>
+     
       </View>
       {
         <>
@@ -330,7 +376,7 @@ const styles = StyleSheet.create({
         height:150, 
         width:150 , 
         marginTop:10, 
-        backgroundColor:'lightblue' , 
+        backgroundColor:'white' , 
         borderRadius:10,
         overflow:'hidden',
     },
@@ -371,6 +417,14 @@ const styles = StyleSheet.create({
     },
     activateOption:{
       color:'white'
+    },
+    fab: {
+      position: 'absolute',
+      margin: 16,
+      right: 0,
+      bottom: 0,
+      backgroundColor:'#3ebb6e',
+      borderRadius:30,
     },
 });
   

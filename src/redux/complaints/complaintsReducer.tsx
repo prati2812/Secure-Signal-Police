@@ -1,9 +1,10 @@
-import { COMPLAINT, COMPLAINTS_DATA} from "./action";
+import { COMPLAINT, COMPLAINTS_DATA, COMPLAINT_STATUS_TYPES} from "./action";
 
 
 const inintialState ={
     complaints:[],
     complaint:Object,
+    complaintStatus:"All",
 }
 
 const complaintReducer = (state = inintialState , action:{type:any , payload:any}) => {
@@ -18,7 +19,12 @@ const complaintReducer = (state = inintialState , action:{type:any , payload:any
             return{
                 ...state,
                 complaint:action.payload,
-            }    
+            }
+        case COMPLAINT_STATUS_TYPES:
+            return{
+                ...state,
+                complaintStatus:action.payload,
+            }        
         default:
             return state;    
     }
