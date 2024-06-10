@@ -31,7 +31,7 @@ const AccountTypeSelection:React.FC<AccountTypeSelectionProps> = ({navigation}) 
 
   return (
     <View style={styles.container}>
-      <StatusBar backgroundColor={'white'}/>
+      <StatusBar backgroundColor={'white'} translucent={true}/>
       <View style={styles.selectionTypeView}>
         <Text style={styles.selectionTypeText}>
           Select Your Registration Type

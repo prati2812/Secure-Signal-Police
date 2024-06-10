@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Image, StatusBar, Text, View , StyleSheet } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import { useSelector } from 'react-redux';
-
+import {useFocusEffect} from '@react-navigation/native';
 
 interface SplashScreenProps {
   navigation:any
@@ -29,6 +29,9 @@ const SplashScreen: React.FC<SplashScreenProps> = ({navigation}) => {
       
   },[navigation , token]);
 
+
+ 
+
   const getGradientColors = (accountType: string) => {
     if (accountType === 'PoliceStation') {
       return ['#af952e', '#f2dd87'];
@@ -53,7 +56,7 @@ const SplashScreen: React.FC<SplashScreenProps> = ({navigation}) => {
   
   return (
     <View style={style.splashMain}>
-      <StatusBar backgroundColor={getColor(accountType)} />
+      <StatusBar backgroundColor={accountType ? getColor(accountType) : 'white'} translucent={true}/>
       <LinearGradient
         colors={getGradientColors(accountType)}
         style={style.splashLinearGradient}>
@@ -98,6 +101,8 @@ const style = StyleSheet.create({
 });
 
 export default SplashScreen;
+
+
 
 
 

@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { Text, View, StyleSheet, KeyboardAvoidingView, Platform, Image, Pressable, TextInput, TouchableOpacity, Dimensions, ActivityIndicator, Alert } from 'react-native';
+import { Text, View, StyleSheet, KeyboardAvoidingView, Platform, Image, Pressable, TextInput, TouchableOpacity, Dimensions, ActivityIndicator, Alert, StatusBar, ScrollView } from 'react-native';
 import HandleError from '../../hook/useError';
 import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
@@ -113,7 +113,8 @@ const getColor = (accountType: string | null) => {
 const isDisabled = isError || isIndicatorVisible;
 
   return (
-    <View style={[styles.container, accountType && {backgroundColor:getColor(accountType)}]}>
+    
+    <View style={[styles.container, accountType && {backgroundColor:getColor(accountType)}]}>  
      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={Platform.select({ios: 0, android: 500})}>   
       <View style={{alignItems: 'center' , flex:1 , justifyContent:'center'}}>
         <Image
@@ -121,7 +122,7 @@ const isDisabled = isError || isIndicatorVisible;
           source={require('../../assets/authentication.png')}
         />
       </View>
-      <Pressable style={{width: '100%', height: '50%'}}>
+      <Pressable style={{width: '100%', height: '60%'}}>
         <View style={styles.bottomSheet}>
           <View style={styles.phoneNumberView}>
             <Text style={styles.phoneNumberText}>Enter your phone number</Text>
@@ -169,6 +170,7 @@ const isDisabled = isError || isIndicatorVisible;
       </Pressable>
       </KeyboardAvoidingView>
     </View>
+    
   );
 };
 
@@ -232,7 +234,7 @@ phoneNumebrTextInputView:{
      flex:1,
      justifyContent:'flex-end',
      margin:20,
-     marginBottom:30,
+     marginBottom:10,
  },
  sendBtnCode:{
      backgroundColor:'#af952e',

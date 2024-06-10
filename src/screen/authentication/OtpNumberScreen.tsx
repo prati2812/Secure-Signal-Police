@@ -185,7 +185,7 @@ const OtpNumberScreen: React.FC<OtpNumberScreenProps> = ({navigation}) => {
             source={require('../../assets/verification.png')}
           />
         </View>
-        <View style={{width: '100%', height: '60%'}}>
+        <View style={{width: '100%', height: '72%'}}>
           <View style={styles.bottomSheet}>
             <View style={styles.iconArrowBackView}>
               <Text style={styles.iconArrowBack}>
@@ -346,7 +346,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'flex-end',
     margin: 20,
-    marginBottom: 30,
+    marginBottom: 10,
   },
   verifyBtnCode: {
     backgroundColor: '#af952e',
