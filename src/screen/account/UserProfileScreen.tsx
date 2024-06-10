@@ -1,8 +1,8 @@
 import * as React from 'react';
 import { useEffect, useState } from 'react';
-import { Text, View, StyleSheet, SafeAreaView, KeyboardAvoidingView, ScrollView, TouchableOpacity, Pressable, Image, TextInput, Platform, AppState, Alert, BackHandler, PermissionsAndroid, ActivityIndicator } from 'react-native';
+import { Text, View, StyleSheet, SafeAreaView,  ScrollView, TouchableOpacity, Pressable, Image, TextInput, Platform, AppState, Alert, BackHandler, PermissionsAndroid, ActivityIndicator } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
-import HandleError from '../../hook/useError';
+import HandleError from '../../components/useError';
 import ImagePickerSheet from '../../components/ImagePickerSheet';
 import { useDispatch, useSelector } from 'react-redux';
 import { addAccountType, addUserName, setProfileCompleted } from '../../redux/userProfile/action';
@@ -255,7 +255,7 @@ const UserProfileScreen:React.FC<UserProfileScreenProps> = ({navigation}) => {
     }
   };
   
-  const isDisabled = isError || isIndicatorVisible;
+  const isDisabled = isError || isIndicatorVisible || !userName;
 
   return (
     <>

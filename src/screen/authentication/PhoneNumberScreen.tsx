@@ -1,13 +1,13 @@
 import * as React from 'react';
 import { Text, View, StyleSheet, KeyboardAvoidingView, Platform, Image, Pressable, TextInput, TouchableOpacity, Dimensions, ActivityIndicator, Alert, StatusBar, ScrollView } from 'react-native';
-import HandleError from '../../hook/useError';
+import HandleError from '../../components/useError';
 import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { addPhoneNumber, addVerificationId } from '../../redux/credentials/action';
 import auth, { firebase } from '@react-native-firebase/auth';
+import { height, regex, width } from '../../utils/constant';
 
-const width = Dimensions.get('screen').width;
-const height = Dimensions.get('screen').height;
+
 
 
 interface PhoneNumberScreenProps {
@@ -15,7 +15,6 @@ interface PhoneNumberScreenProps {
 }
 
 const PhoneNumberScreen:React.FC<PhoneNumberScreenProps> = ({navigation}) => {
-  const regex = /[.,+\-' ']/; 
   const [phoneNumber, setPhoneNumber] = useState('');
   const [isError, setIsError] = useState(false);
   const [isIndicatorVisible, setIndicatorVisible] = useState(false);
@@ -26,50 +25,52 @@ const PhoneNumberScreen:React.FC<PhoneNumberScreenProps> = ({navigation}) => {
 
 
 const handlePhoneNumber = async() => {
-  try {
-     if(!phoneNumber){
-      setIsError(true);
-      setPhoneNumber(phoneNumber);
-      return false;    
-     }
-  
-     let phoneNo = '+91'+phoneNumber;
-     dispatch(addPhoneNumber(phoneNo));
+
+  if(!isError){
+    try {
+      if(!phoneNumber){
+       setIsError(true);
+       setPhoneNumber(phoneNumber);    
+      }
+   
+      let phoneNo = '+91'+phoneNumber;
+      dispatch(addPhoneNumber(phoneNo));
+       
+      setIndicatorVisible(true);
+      try{
+       const confirmation = await auth().signInWithPhoneNumber(phoneNo);
+       
+       dispatch(addVerificationId(confirmation.verificationId));  
+       setIndicatorVisible(false);
+        
+       navigation.navigate('OtpScreen');
+      }
+      catch(error){
+        setIndicatorVisible(false); 
+        console.log(error);
+        
+        Alert.alert(
+         'Error',
+         'Please try again later',
+         [
+           {
+             text: 'Ohk',
+           },
+         ],
+         {
+           cancelable: false,
+         },
+       );
+        
+        
+      }
       
-     setIndicatorVisible(true);
-     try{
-      console.log("===" , phoneNo);
-      const confirmation = await auth().signInWithPhoneNumber(phoneNo);
-      console.log("====",confirmation);
-      
-      dispatch(addVerificationId(confirmation.verificationId));  
-      setIndicatorVisible(false);
-       
-      navigation.navigate('OtpScreen');
-     }
-     catch(error){
-       setIndicatorVisible(false); 
-       console.log(error);
-       
-       Alert.alert(
-        'Error',
-        'Please try again later',
-        [
-          {
-            text: 'Ohk',
-          },
-        ],
-        {
-          cancelable: false,
-        },
-      );
-       
-       
-     }
-     
-  } catch (error) {
-    console.log(error);
+   } catch (error) {
+     console.log(error);
+   }
   }
+
+  
 
 }
 
@@ -78,17 +79,17 @@ const handlePhoneNumber = async() => {
   if (!text) {
     setIsError(true);
     setPhoneNumber(text);
-    return false;
+    
   } 
   else if (text.length < 10) {
     setIsError(true);
     setPhoneNumber(text);
-    return false;
+    
   } 
   else if(regex.test(text)) {
      setIsError(true);
      setPhoneNumber(text);
-     return false;
+     
   }
   else{
     setPhoneNumber(text);
@@ -110,7 +111,7 @@ const getColor = (accountType: string | null) => {
 };
 
 
-const isDisabled = isError || isIndicatorVisible;
+const isDisabled = isError || isIndicatorVisible || !phoneNumber;
 
   return (
     
@@ -136,6 +137,7 @@ const isDisabled = isError || isIndicatorVisible;
                 maxLength={10}
                 value={phoneNumber}
                 onChangeText={phoneNumberValidation}
+                onSubmitEditing={handlePhoneNumber}
               />
             </View>
           </View>
@@ -152,7 +154,7 @@ const isDisabled = isError || isIndicatorVisible;
       </View>
       
       <View style={styles.sendCodeBtnView}>
-         <TouchableOpacity style={[styles.sendBtnCode, isError && styles.sendBtnCodeDisable , accountType && {backgroundColor:getColor(accountType)}]}
+         <TouchableOpacity style={[styles.sendBtnCode,accountType && {backgroundColor:getColor(accountType)} , isError && accountType && styles.sendBtnCodeDisable]}
                 disabled={isDisabled}
                 onPress={ () => handlePhoneNumber()}>
          <View style={styles.btnView}>

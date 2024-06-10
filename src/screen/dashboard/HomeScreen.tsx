@@ -1,14 +1,12 @@
 import * as React from 'react';
-import { Text, View, StyleSheet, StatusBar, ScrollView, Platform, PermissionsAndroid, ActivityIndicator, FlatList, RefreshControl } from 'react-native';
-import CustomHeader from '../../components/CustomHeader';
-import { addToken, addUserName } from '../../redux/userProfile/action';
+import { Text, View, StyleSheet, StatusBar,  Platform, PermissionsAndroid, ActivityIndicator, FlatList, RefreshControl } from 'react-native';
+import {  addUserName } from '../../redux/userProfile/action';
 import { Dispatch, useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { firebase } from '@react-native-firebase/auth';
 import ComplaintsCard from '../../components/ComplaintsCard';
 import { COMPLAINT, fetchComplaints } from '../../redux/complaints/action';
 import { allNotificationReadOrNot, fetchLiveLocationNotificationData } from '../../redux/notifications/action';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import HomeCustomHeader from '../../components/HomeCustomHeader';
 import store from '../../redux/store';
 import { FAB } from 'react-native-paper';
@@ -36,7 +34,6 @@ const HomeScreen:React.FC<HomeScreenProps> = ({navigation}) => {
 
    
    useEffect(() => {
-      getToken();
       requestNotificationPermission(); 
       dispatchStore(fetchLiveLocationNotificationData(userId));
    },[token]);
@@ -68,18 +65,6 @@ const HomeScreen:React.FC<HomeScreenProps> = ({navigation}) => {
   },[accountType]);
 
 
-  
-
-  const getToken = async() => {
-    const value = await AsyncStorage.getItem('token');
-    if(value !== null){
-      setToken(value);
-      dispatch(addToken(value));
-    }
-    
-  }
-   
-
   const requestNotificationPermission = async() => {
     if (Platform.OS === 'android') {
       const granted = await PermissionsAndroid.request(
@@ -94,7 +79,6 @@ const HomeScreen:React.FC<HomeScreenProps> = ({navigation}) => {
 
 
    const handleDetails = (item:Object) => {
-      console.log(item);
       dispatch({
          type:COMPLAINT,
          payload:item,
@@ -102,10 +86,7 @@ const HomeScreen:React.FC<HomeScreenProps> = ({navigation}) => {
       navigation.navigate('Complaint');
    }
 
-   const handleLocationHistory = () => {
-    navigation.navigate('LocationHistory');
-   }
-
+  
   const getColor = (accountType: string | null) => {
     if (accountType === 'PoliceStation') {
       return '#af952e';
@@ -141,18 +122,20 @@ const HomeScreen:React.FC<HomeScreenProps> = ({navigation}) => {
         if(!policeStationStatus){
            return 'clock';
         }
-        else if(policeStationStatus && (policeStationStatus === "Completed" || policeStationStatus === "Not Completed")){
-           return 'thumbs-down'; 
+        else if(policeStationStatus && (policeStationStatus === "Not Completed")){
+          return 'window-close';  
         }
+        return 'thumbs-down';
     }
     if(complaintStatus === "pending" && isInjured === "Yes"){
        if(!policeStationStatus && !hospitalStatus){
           return 'clock';
        }
-       else if((policeStationStatus || hospitalStatus) && 
-            ((policeStationStatus === "Completed" || policeStationStatus === "Not Completed") || 
-              (hospitalStatus === "Completed" || hospitalStatus === "Not Completed"))){
+       else if((policeStationStatus || hospitalStatus) && ((policeStationStatus === "Completed") || (hospitalStatus === "Completed"))){
                  return 'thumbs-down';
+       }
+       else if((policeStationStatus || hospitalStatus)  &&  (policeStationStatus === "Not Completed" || hospitalStatus === "Not Completed")){
+           return 'window-close';
        }
 
     }
@@ -176,9 +159,10 @@ const HomeScreen:React.FC<HomeScreenProps> = ({navigation}) => {
         if(!policeStationStatus){
            return '#e1ad01';
         }
-        else if(policeStationStatus && (policeStationStatus === "Completed" || policeStationStatus === "Not Completed")){
+        else if(policeStationStatus && (policeStationStatus === "Not Completed")){
            return 'red'; 
         }
+        return 'red';
     }
     if(complaintStatus === "pending" && isInjured === "Yes"){
        if(!policeStationStatus && !hospitalStatus){
@@ -235,42 +219,66 @@ const HomeScreen:React.FC<HomeScreenProps> = ({navigation}) => {
 
   return (
     <>
-    <View style={styles.container}>
-      <StatusBar backgroundColor={getColor(accountType)} />
-      <HomeCustomHeader name={'Home'} 
-      icon={accountType === 'PoliceStation'  ? 'map'  : ''} 
-      call={handleLocationHistory} isRead={notificationReadStatus}/>
+      <View style={styles.container}>
+        <StatusBar backgroundColor={getColor(accountType)} />
+        <HomeCustomHeader
+          name={'Home'}
+          icon={accountType === 'PoliceStation' ? 'map' : ''}
+          call={() => navigation.navigate('LocationHistory')}
+          isRead={notificationReadStatus}
+        />
 
-      {loading ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={getColor(accountType)} />
-        </View>
-      ) : (
-        <><FlatList
-            data={filteredComplaints.sort((a: { complaints: { createdAt: string; }; }, b: { complaints: { createdAt: string; }; }) => new Date(b.complaints.createdAt).getTime() - new Date(a.complaints.createdAt).getTime()
+        {loading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color={getColor(accountType)} />
+          </View>
+        ) : (
+          <>
+            <FlatList
+              data={filteredComplaints.sort(
+                (
+                  a: {complaints: {createdAt: string}},
+                  b: {complaints: {createdAt: string}},
+                ) =>
+                  new Date(b.complaints.createdAt).getTime() -
+                  new Date(a.complaints.createdAt).getTime(),
+              )}
+              renderItem={renderComplaint}
+              keyExtractor={item => item.complaints.complaintId.toString()}
+              contentContainerStyle={{paddingTop: 20, paddingBottom: 10}}
+              ListEmptyComponent={
+                <View style={{alignItems: 'center'}}>
+                  <Text
+                    style={{fontSize: 25, color: 'black', fontWeight: '700'}}>
+                    No Complaint
+                  </Text>
+                </View>
+              }
+              refreshControl={
+                <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+              }
+              showsVerticalScrollIndicator={false}
+            />
+
+            {complaints.length > 0 && (
+              <FAB
+                style={[
+                  styles.fab,
+                  accountType && {backgroundColor: getColor(accountType)},
+                ]}
+                icon="filter-outline"
+                color="white"
+                onPress={() => setComplaintBottomSheetVisible(true)}
+              />
             )}
-            renderItem={renderComplaint}
-            keyExtractor={(item) => item.complaints.complaintId.toString()}
-            contentContainerStyle={{ paddingTop: 20, paddingBottom: 10 }}
-            ListEmptyComponent={<View style={{ alignItems: 'center' }}>
-              <Text style={{ fontSize: 25, color: 'black', fontWeight: '700' }}>No Complaint</Text>
-            </View>}
-            refreshControl={<RefreshControl
-              refreshing={refreshing}
-              onRefresh={onRefresh} />}
-            showsVerticalScrollIndicator={false} />
-            
-            <FAB
-              style={[styles.fab , accountType && {backgroundColor:getColor(accountType)}]}
-              icon="filter-outline"
-              color='white'
-              onPress={() => setComplaintBottomSheetVisible(true)} />
-        </>
+          </>
+        )}
+      </View>
+      {isComplaintBottomSheetVisible && (
+        <ComplaintFilterBottomSheet
+          setComplaintBottomSheetVisible={setComplaintBottomSheetVisible}
+        />
       )}
-    </View>
-    {
-       isComplaintBottomSheetVisible && <ComplaintFilterBottomSheet  setComplaintBottomSheetVisible={setComplaintBottomSheetVisible}/>
-    }
     </>
   );
 };

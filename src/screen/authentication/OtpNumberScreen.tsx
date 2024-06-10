@@ -1,16 +1,14 @@
 import * as React from 'react';
-import { Text, View, StyleSheet, TextInput, KeyboardAvoidingView, Platform, Image, TouchableOpacity, Dimensions, ActivityIndicator, Alert } from 'react-native';
+import { Text, View, StyleSheet, TextInput, KeyboardAvoidingView, Platform, Image, TouchableOpacity, Dimensions, ActivityIndicator, Alert, NativeSyntheticEvent, TextInputKeyPressEventData, Pressable } from 'react-native';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Icon from 'react-native-vector-icons/MaterialIcons';
-import HandleError from '../../hook/useError';
+import HandleError from '../../components/useError';
 import { useSelector } from 'react-redux';
 import auth from '@react-native-firebase/auth';
 import { requestUserPermission } from '../../utils/NotificationService';
 import instance from '../../axios/axiosInstance';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
-const width = Dimensions.get('screen').width;
-const height = Dimensions.get('screen').height;
+import { height, regex, width } from '../../utils/constant';
 
 
 interface OtpNumberScreenProps {
@@ -18,9 +16,8 @@ interface OtpNumberScreenProps {
 }
 
 const OtpNumberScreen: React.FC<OtpNumberScreenProps> = ({navigation}) => {
-  const regex = /[.,+\-' ']/;  
-  const inputRef = useRef<TextInput>(null);
-  const [otp, setOtp] = useState('');
+  const inputRefs = useRef<(TextInput | null)[]>([]);
+  const [otp, setOtp] = useState(Array(6).fill(''));
   const [isError, setIsError] = useState(false);
   const [timeLeft, setTimeLeft] = useState(30);
   const [isIndicatorVisible, setIndicatorVisible] = useState(false);
@@ -28,7 +25,7 @@ const OtpNumberScreen: React.FC<OtpNumberScreenProps> = ({navigation}) => {
   const phoneNumber = useSelector((state : any) => state.credentials.phoneNumber);
   const verificationId = useSelector((state:any) => state.credentials.verificationId);
   const accountType = useSelector((state: any) => state.userProfile.accountType); 
-  const onPress = () => inputRef.current?.focus();
+  
 
   useEffect(() => {
     requestUserPermission();
@@ -47,115 +44,6 @@ const OtpNumberScreen: React.FC<OtpNumberScreenProps> = ({navigation}) => {
     return () => clearTimeout(timerId);
   }, [timeLeft]);
 
-  const handleResendCode = async() => {
-    if (!isResendEnabled) return;
-     await auth().signInWithPhoneNumber(phoneNumber,true);
-    setTimeLeft(30);
-    setIsResendEnabled(false);
-  };
-
-  const handleOtpNumber = async() => {
-    
-    try
-    {
-       if(!otp){
-        setIsError(true);
-        setOtp(otp);
-        return false;  
-       }
-  
-       setIndicatorVisible(true); 
-       const credential = auth.PhoneAuthProvider.credential(verificationId , otp);
-       const dataa = await auth().signInWithCredential(credential);
-       const userId = dataa.user.uid;
-       const phoneNumber = dataa.user.phoneNumber;
-
-       if(accountType === "PoliceStation"){
-        const response = await instance.post('/policeStation/userAuthentication', {
-          userId,
-          phoneNumber,
-        });
-        if (response.status === 201) {
-          const responseData = await response.data;
-          const {token} = responseData;
-          AsyncStorage.setItem('token', token);
-        }   
-       }
-       else if(accountType === "Hospital"){
-        const response = await instance.post("/hospital/userAuthentication" , {userId , phoneNumber});
-        if(response.status === 201){
-         const responseData = await response.data;
-         const {token} = responseData;
-         AsyncStorage.setItem('token' , token);
-        } 
-       } 
-       
-       
-       setIndicatorVisible(false);
-       navigation.navigate('UserProfile');
-    }
-    catch(error)
-    {
-       setIndicatorVisible(false);
-       Alert.alert(
-        'Invalid Otp',
-        `Please enter the correct otp`,
-        [
-          {
-            text: 'Ohk',
-          },
-        ],
-        {
-          cancelable: true,
-        },
-      );
-       console.log(error);
-       
-    }
-    
-  };
-
-
-  const otpContent = useMemo(
-    () => (
-      <View style={styles.otpContainerView}>
-        {Array.from({length: 6}).map((_, i) => (
-          <Text
-            key={i}
-            onPress={onPress}
-            style={[styles.otpTextStyle, otp[i] ? styles.otpFilledStyle : {}]}>
-            {otp[i]}
-          </Text>
-        ))}
-      </View>
-    ),
-    [otp],
-  );
-
-
-  const otpValidation = (text: string) => {
-    if(!text) {
-      setIsError(true);
-      setOtp(text);
-      return false;
-    }
-    else if(regex.test(text)){
-      setIsError(true);
-      setOtp(text);
-      return false;
-    } 
-    else if ((text.length < 6)) {
-      setIsError(true);
-      setOtp(text);
-      return false;
-    }
-    else{
-      setIsError(false);
-      setOtp(text);
-    } 
-    
-  }
-
   const getColor = (accountType: string | null) => {
     if (accountType === 'PoliceStation') {
       return '#af952e';
@@ -165,6 +53,137 @@ const OtpNumberScreen: React.FC<OtpNumberScreenProps> = ({navigation}) => {
       return '#af952e';
     }
   };
+
+  
+  const handleResendCode = async() => {
+    if (!isResendEnabled) return;
+     await auth().signInWithPhoneNumber(phoneNumber,true);
+    setTimeLeft(30);
+    setIsResendEnabled(false);
+  };
+
+  const handleOtpNumber = async() => {
+    if(!isError){
+      try
+      {
+         if(!otp){
+          setIsError(true);
+          setOtp(otp);
+          return false;  
+         }
+    
+         setIndicatorVisible(true); 
+         let otpString = otp.join('');
+         const credential = auth.PhoneAuthProvider.credential(verificationId , otpString);
+         const dataa = await auth().signInWithCredential(credential);
+         const userId = dataa.user.uid;
+         const phoneNumber = dataa.user.phoneNumber;
+  
+         if(accountType === "PoliceStation"){
+          const response = await instance.post('/policeStation/userAuthentication', {
+            userId,
+            phoneNumber,
+          });
+          if (response.status === 201) {
+            const responseData = await response.data;
+            const {token} = responseData;
+            AsyncStorage.setItem('token', token);
+          }   
+         }
+         else if(accountType === "Hospital"){
+          const response = await instance.post("/hospital/userAuthentication" , {userId , phoneNumber});
+          if(response.status === 201){
+           const responseData = await response.data;
+           const {token} = responseData;
+           AsyncStorage.setItem('token' , token);
+          } 
+         } 
+         
+         
+         setIndicatorVisible(false);
+         navigation.navigate('UserProfile');
+      }
+      catch(error)
+      {
+         setIndicatorVisible(false);
+         Alert.alert(
+          'Invalid Otp',
+          `Please enter the correct otp`,
+          [
+            {
+              text: 'Ohk',
+            },
+          ],
+          {
+            cancelable: true,
+          },
+        );
+         console.log(error);
+         
+      } 
+    }
+    
+    
+  };
+
+  const handleKeyPress = (e: NativeSyntheticEvent<TextInputKeyPressEventData>, index: number) => {
+    if (e.nativeEvent.key === 'Backspace' && otp[index] === '') {
+      if (index > 0) {
+        inputRefs.current[index - 1].focus();
+      }
+      
+    }
+  };
+
+  const otpValidation = (text: string, index: number) => {
+    const newOtp = [...otp];
+    newOtp[index] = text;
+
+    if (text.length === 1 && index < 5) {
+      inputRefs.current[index + 1].focus();
+    }
+
+    if (!text) {
+      setIsError(true);
+    } else if (regex.test(text)) {
+      setIsError(true);
+    } else if (newOtp.join('').length < 6) {
+      setIsError(true);
+    } else {
+      setIsError(false);
+    }
+
+    setOtp(newOtp);
+  };
+
+  const otpContent = useMemo(
+    () => (
+      <View style={styles.otpContainerView}>
+        {otp.map((value, i) => (
+          <TextInput
+          key={i}
+          ref={(el) => (inputRefs.current[i] = el)}
+          value={value}
+          onChangeText={(text) => otpValidation(text, i)}
+          style={[
+            styles.otpTextStyle,
+            accountType && {borderColor:getColor(accountType)},
+            otp[i] ? styles.otpFilledStyle : {},
+          ]}
+          maxLength={1}
+          keyboardType="number-pad"
+          onFocus={() => inputRefs.current[i].setNativeProps({ selection: { start: 0, end: 0 } })}
+          onKeyPress={(e) => handleKeyPress(e,i)}
+          onSubmitEditing={handleOtpNumber}
+        />
+        ))}
+      </View>
+    ),
+    [otp],
+  );
+
+
+  
   
   const isDisabled = isError || isIndicatorVisible;
     
@@ -187,25 +206,17 @@ const OtpNumberScreen: React.FC<OtpNumberScreenProps> = ({navigation}) => {
         </View>
         <View style={{width: '100%', height: '72%'}}>
           <View style={styles.bottomSheet}>
-            <View style={styles.iconArrowBackView}>
+            <Pressable style={styles.iconArrowBackView} onPress={() => navigation.goBack()}>
               <Text style={styles.iconArrowBack}>
                 <Icon name="keyboard-backspace" size={40} />
               </Text>
-            </View>
+            </Pressable>
             <View style={styles.otpnNumberTextView}>
               <Text style={styles.otpNumberText}>
                 Enter the code we just texted you
               </Text>
             </View>
             <View style={styles.otpNumberViewTextTextInput}>
-              <TextInput
-                maxLength={6}
-                ref={inputRef}
-                style={styles.otpTextInput}
-                onChangeText={otpValidation}
-                value={otp}
-                keyboardType="number-pad"
-              />
               {otpContent}
             </View>
             {isError && otp.length >= 1 && otp.length <= 6 && regex.test(otp) ? (
@@ -232,7 +243,7 @@ const OtpNumberScreen: React.FC<OtpNumberScreenProps> = ({navigation}) => {
 
             <View style={styles.verifyCodeBtnView}>
               <TouchableOpacity 
-                   style={[styles.verifyBtnCode , isError && styles.verifyCodeBtnDisable , accountType && {backgroundColor:getColor(accountType)}]} 
+                   style={[styles.verifyBtnCode , accountType && {backgroundColor:getColor(accountType)} , isError && accountType  && styles.verifyCodeBtnDisable]} 
                    onPress={handleOtpNumber}
                    disabled={isDisabled}>
                 <View style={styles.btnView}>

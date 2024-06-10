@@ -1,8 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect} from 'react';
 import { Image, StatusBar, Text, View , StyleSheet } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import { useSelector } from 'react-redux';
-import {useFocusEffect} from '@react-navigation/native';
+
 
 interface SplashScreenProps {
   navigation:any

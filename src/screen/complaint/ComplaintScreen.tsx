@@ -3,12 +3,13 @@ import { Text, View, StyleSheet, StatusBar, ScrollView, Image, Pressable, Activi
 import CustomHeader from '../../components/CustomHeader';
 import { useSelector } from 'react-redux';
 import { useEffect, useState } from 'react';
-import base64 from 'base64-js';
 import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 import Icon from 'react-native-vector-icons/MaterialIcons';
-import { FAB, Modal } from 'react-native-paper';
+import {  Modal } from 'react-native-paper';
 import { firebase} from '@react-native-firebase/storage';
 import instance from '../../axios/axiosInstance';
+import { dispatchStore } from '../dashboard/HomeScreen';
+import { fetchComplaints } from '../../redux/complaints/action';
 
 
 interface ComplaintScreenProps {
@@ -23,9 +24,12 @@ const ComplaintScreen:React.FC<ComplaintScreenProps> = ({navigation}) => {
  const [imageUris, setImageUris] = React.useState<string[]>([]);
  const [imageUri , setImageUri] = React.useState<string | undefined>();
  const [loading , setLoading] = React.useState(true);
- const [isCompleted , setCompletedButton] = useState(false);
- const [isNotCompleted , setNotCompletedButton] = useState(false);
- const [isStatus , setStatus] = useState('');
+ const [complaintStatus , setComplaintStatus] = useState({
+    isCompleted:false,
+    isNotCompleted:false,
+    isStatus:'',
+ });
+ const [valueChanged, setValueChanged] = useState(false);
  const userId = complaintData.complaints.complainerId;
  const policeStationId = complaintData.complaints.nearestPoliceStationId;
  const hospitalId = complaintData.complaints.nearestHospitalId;
@@ -38,33 +42,43 @@ const ComplaintScreen:React.FC<ComplaintScreenProps> = ({navigation}) => {
     if(accountType === "PoliceStation"){
       if(policeStationStatus){
         if(policeStationStatus === "Completed"){
-            setStatus(policeStationStatus);
-            setCompletedButton(true);
+            setComplaintStatus({
+               isCompleted:true,
+               isNotCompleted:false,
+               isStatus:policeStationStatus 
+            })
         }
         else if(policeStationStatus === "Not Completed"){
-           setStatus(policeStationStatus);
-           setNotCompletedButton(true);
+           setComplaintStatus({
+            isCompleted:false,
+            isNotCompleted:true,
+            isStatus:policeStationStatus 
+         })
         }
      }
     }
     else if(accountType === "Hospital"){
        if(hospitalStatus){
          if(hospitalStatus === "Completed"){
-           setStatus(hospitalStatus);
-           setCompletedButton(true);
+           setComplaintStatus({
+            isCompleted:true,
+            isNotCompleted:false,
+            isStatus:hospitalStatus 
+         })
          }
          else if(hospitalStatus === "Not Completed"){
-           setStatus(hospitalStatus);
-           setNotCompletedButton(true);
+           setComplaintStatus({
+            isCompleted:false,
+            isNotCompleted:true,
+            isStatus:hospitalStatus 
+           })
          }
        }
     }
  },[])
 
  useEffect(() => {
-     imageDownload();
-     
-          
+     imageDownload();     
  },[]);
 
  const imageDownload = async() => {
@@ -94,7 +108,7 @@ const showModal = (imageUrl : string|undefined) => {
   setImageUri(imageUrl);
 };
 
-const hideModal = () => setVisible(false);
+
  
  const getColor = (accountType: string | null) => {
   if (accountType === 'PoliceStation') {
@@ -107,20 +121,27 @@ const hideModal = () => setVisible(false);
   }
 };
 
-const handleCompleted = () => {
-  setCompletedButton(true);
-  setNotCompletedButton(false);
-  setStatus("Completed");
-}
+  const handleComplaintStatus = (status:string) => {
+     if(status === "Completed"){
+         setComplaintStatus({
+            isCompleted:true,
+            isNotCompleted:false,
+            isStatus:"Completed",
+         })
+         setValueChanged(true);
+     }
+     else if(status === "Not Completed"){
+         setComplaintStatus({
+           isCompleted:false,
+           isNotCompleted:true,
+           isStatus:"Not Completed",
+         })
+         setValueChanged(true);
+     } 
+  }
 
-const handleNotCompleted = () => {
- setNotCompletedButton(true);
- setCompletedButton(false);
- setStatus("Not Completed");
-}
-
-const handleSave = async() => {
-  const newStatus = isStatus;
+ const handleSave = async() => {
+  const newStatus = complaintStatus.isStatus;
 
   
   if(accountType === "Hospital"){
@@ -139,6 +160,7 @@ const handleSave = async() => {
            console.log("saved");
         }
       }
+      dispatchStore(fetchComplaints(userId, accountType));
       navigation.goBack();
    }
    else{
@@ -162,6 +184,7 @@ const handleSave = async() => {
              
           }
       }
+      dispatchStore(fetchComplaints(userId, accountType));
       navigation.goBack();
      }
      else{
@@ -174,13 +197,13 @@ const handleSave = async() => {
 
 
    
-}
+ }
 
-
+ 
 
   const handleMap = () => {
     Linking.openURL(`geo:${complaintData.complaints.complaintLocation.latitude},${complaintData.complaints.complaintLocation.longtitude};u=35`);
-    // navigation.navigate('LocationRoute')
+   
   }
 
  
@@ -192,7 +215,7 @@ const handleSave = async() => {
           name={'Complaint Preview'}
           backIcon="keyboard-backspace"
           backCall={() => navigation.goBack()}
-          icon={isStatus.length === 0 ? '' : 'check'}
+          icon={!valueChanged ? '' : 'check'}
           call={handleSave}
         />
 
@@ -290,17 +313,17 @@ const handleSave = async() => {
 
               <View style={styles.questionOptionSelectionView}>
 
-                <Pressable onPress={() => handleCompleted()} style={{ flex: 1 }}>
-                  <View style={[styles.questionOptionView, isCompleted && { backgroundColor: getColor(accountType) }]}>
-                    <Text style={[styles.option, isCompleted && styles.activateOption]}>
+                <Pressable onPress={() => handleComplaintStatus("Completed")} style={{ flex: 1 }}>
+                  <View style={[styles.questionOptionView, complaintStatus.isCompleted && { backgroundColor: getColor(accountType) }]}>
+                    <Text style={[styles.option, complaintStatus.isCompleted && styles.activateOption]}>
                       Completed
                     </Text>
                   </View>
                 </Pressable>
 
-                <Pressable onPress={() => handleNotCompleted()} style={{ flex: 1 }}>
-                  <View style={[styles.questionOptionView, isNotCompleted && { backgroundColor: getColor(accountType) }]}>
-                    <Text style={[styles.option, isNotCompleted && styles.activateOption]}>
+                <Pressable onPress={() => handleComplaintStatus("Not Completed")} style={{ flex: 1 }}>
+                  <View style={[styles.questionOptionView, complaintStatus.isNotCompleted && { backgroundColor: getColor(accountType) }]}>
+                    <Text style={[styles.option, complaintStatus.isNotCompleted && styles.activateOption]}>
                       Not Completed
                     </Text>
                   </View>
@@ -319,7 +342,7 @@ const handleSave = async() => {
         <>
           <Modal
             visible={visible}
-            onDismiss={hideModal}
+            onDismiss={() => setVisible(false)}
             contentContainerStyle={styles.containerStyle}>
             <Image
               source={{uri: imageUri}}
@@ -355,14 +378,14 @@ const styles = StyleSheet.create({
     },
     complaintTitle:{
         fontWeight:'700',
-        fontSize:20,
+        fontSize:18,
         color:'black',
     },
     message:{
         color:'black',
         alignItems:'center',
         justifyContent:'center',
-        fontSize:16,
+        fontSize:15,
     },
     complaintImageView:{
         flexDirection:'row' ,  
@@ -400,7 +423,7 @@ const styles = StyleSheet.create({
     },
     questionOptionView:{
       flex:1,
-      height:60,
+      height:50,
       backgroundColor:'lightgray',
       borderRadius:25,
       alignItems:'center',
@@ -409,7 +432,7 @@ const styles = StyleSheet.create({
     },
     option:{
         color:'black',
-        fontSize:20,
+        fontSize:18,
         fontWeight:'500',
     },
     activateOptionView:{

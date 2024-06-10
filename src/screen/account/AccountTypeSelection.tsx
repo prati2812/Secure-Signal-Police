@@ -1,37 +1,46 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as React from 'react';
-import { useState } from 'react';
-import { Text, View, StyleSheet, Pressable, TouchableOpacity, StatusBar } from 'react-native';
+import { Text, View, StyleSheet,  TouchableOpacity, StatusBar, Dimensions } from 'react-native';
 import { useDispatch } from 'react-redux';
 import { addAccountType } from '../../redux/userProfile/action';
-
+import LinearGradient from 'react-native-linear-gradient';
+import Icon from 'react-native-vector-icons/FontAwesome6';
+import Icon1 from 'react-native-vector-icons/MaterialCommunityIcons';
+import { height } from '../../utils/constant';
 
 interface AccountTypeSelectionProps {
     navigation:any
 }
 
+
+
 const AccountTypeSelection:React.FC<AccountTypeSelectionProps> = ({navigation}) => {
 
-    const [selectedType, setSelectedType] = useState<string | null>('Hospital');
     const dispatch = useDispatch();
 
-    const handleSelection = (type: string | null) => {
-      setSelectedType(type);
+    const handleSelection = async(type: string | null) => {
+      await AsyncStorage.clear();
+      if(type){
+         await AsyncStorage.setItem("AccountType" , type);
+         dispatch(addAccountType(type));
+         navigation.navigate('PhoneNumber');
+      }
     };
 
-    const selectionSubmit = async() => {
-        await AsyncStorage.clear();
-        if(selectedType){
-           await AsyncStorage.setItem("AccountType" , selectedType);
-           dispatch(addAccountType(selectedType));
-           navigation.navigate('PhoneNumber');
-        }
-    }
+   
+
+
+  
     
 
   return (
     <View style={styles.container}>
       <StatusBar backgroundColor={'white'} translucent={true}/>
+      <LinearGradient
+        colors={['#008ECC', '#f2dd87']}
+        style={{flex:1}}>
+
+         
       <View style={styles.selectionTypeView}>
         <Text style={styles.selectionTypeText}>
           Select Your Registration Type
@@ -43,37 +52,24 @@ const AccountTypeSelection:React.FC<AccountTypeSelectionProps> = ({navigation}) 
         <View style={styles.queryBtn}>
         <TouchableOpacity 
           style={[
-            styles.HospitalTypeView,
-            selectedType === 'Hospital' && styles.selectedType
+            styles.HospitalTypeView
           ]}
-          onPress={() => handleSelection('Hospital')}
-        >
+          onPress={() => handleSelection('Hospital')}>
             <Text style={styles.HospitalTypeText}>Hospital</Text>
+            <Icon name='hospital' size={22} color={'#008ECC'}/>
           </TouchableOpacity>
 
           <TouchableOpacity 
           style={[
-            styles.PoliceStationTypeView,
-            selectedType === 'PoliceStation' && styles.selectedType
+            styles.PoliceStationTypeView
           ]}
-          onPress={() => handleSelection('PoliceStation')}
-        >
+          onPress={() => handleSelection('PoliceStation')}>
             <Text style={styles.PoliceStationTypeText}>Police Station</Text>
+            <Icon1 name='police-station' size={22} color={'#af952e'}/>
           </TouchableOpacity>
         </View>
 
-
-        <View style={styles.NextBtnView}>
-              <TouchableOpacity
-                  style={styles.NextBtn} 
-                  onPress={() => selectionSubmit()}>
-                  <View>
-                       <Text style={styles.btnText}>Next</Text>
-                  </View>
-              </TouchableOpacity> 
-        </View>
-
-      
+      </LinearGradient>
     </View>
   );
 };
@@ -81,15 +77,14 @@ const AccountTypeSelection:React.FC<AccountTypeSelectionProps> = ({navigation}) 
 const styles = StyleSheet.create({
     container: {
         flex:1,
-        backgroundColor:'white',
     },
     selectionTypeView:{
         alignItems:'center',
-        marginTop:40, 
+        marginTop:height/6, 
     },
     selectionTypeText:{
         paddingTop:10,
-        fontSize:25,
+        fontSize:22,
         fontWeight:'700',
         color:'black'
     },
@@ -100,13 +95,15 @@ const styles = StyleSheet.create({
         marginTop:10,
         padding:30,
         backgroundColor:'white',
-        borderColor:'white',
+        borderColor:'#008ECC',
         borderWidth:2,
         borderRadius:10,
         elevation:10,
+        flexDirection:'row',
+        justifyContent:'space-between'
     },
     HospitalTypeText:{
-        fontSize:25,
+        fontSize:18,
         fontWeight:'600',
         color:'black',
     },
@@ -114,37 +111,19 @@ const styles = StyleSheet.create({
         marginTop:20,
         padding:30,
         backgroundColor:'white',
-        borderColor:'white',
+        borderColor:'#f2dd87',
         borderWidth:2,
         borderRadius:10,
         elevation:10,
+        flexDirection:'row',
+        justifyContent:'space-between'
     },
     PoliceStationTypeText:{
-        fontSize:25,
+        fontSize:18,
         fontWeight:'600',
         color:'black',
     },
-    NextBtnView:{
-        margin:30,
-        padding:20,
-        
-    },
-    NextBtn:{
-        padding:20,
-        backgroundColor:'#bf1234',
-        borderRadius:20,
-        elevation:7,
-        alignItems:'center',
-    },
-    btnText:{
-        fontSize:20,
-        fontWeight:'500',
-        color:'white',
-    },
-    selectedType: {
-        borderColor: '#bf1234',
-        borderWidth: 2,
-    },
+  
          
 });
 

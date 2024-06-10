@@ -4,10 +4,12 @@ import CustomHeader from '../../components/CustomHeader';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import CustomProfileOption from '../../components/CustomProfileOption';
 import DeleteAccountSheet from '../../components/DeleteAccountSheet';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import BottomSheet from '../../components/BottomSheet';
-import { useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { firebase } from '@react-native-firebase/auth';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { addToken } from '../../redux/userProfile/action';
 
 
 
@@ -20,11 +22,10 @@ const AccountProfile:React.FC<AccountProfileProps> = ({navigation}) => {
   const [isBottomSheetVisible, setBottomSheetVisible] = useState(false);
   const [isDeleteAccountSheetVisible, setDeleteAccountSheetVisible] = useState(false);
   const userName = useSelector((state : any) => state.userProfile.userName);
-  const imageResponse = useSelector((state : any) => state.userProfile.imageResponse);
   const imageUri = useSelector((state:any) => state.userProfile.imageUri);
   const phoneNumber = firebase.auth().currentUser?.phoneNumber;
-  const token = useSelector((state:any) => state.userProfile.token);
   const accountType = useSelector((state: any) => state.userProfile.accountType);
+  const dispatch = useDispatch();
 
   const getColor = (accountType: string | null) => {
     if (accountType === 'PoliceStation') {
@@ -38,14 +39,12 @@ const AccountProfile:React.FC<AccountProfileProps> = ({navigation}) => {
   };
   
 
-  const openDeleteAccountSheet = () => {
-    setDeleteAccountSheetVisible(true);
-  };
-
-  const openBottomSheet = () => {
-    setBottomSheetVisible(true);
-  };
-
+  const handleLogout = async() => {
+    await AsyncStorage.clear();
+    dispatch(addToken(''));
+    navigation.navigate('PhoneNumber');
+  } 
+ 
 
 
   return (
@@ -63,10 +62,7 @@ const AccountProfile:React.FC<AccountProfileProps> = ({navigation}) => {
             />
           </View>
 
-          <Text style={styles.profileName}>{userName}</Text>
-          <Text style={styles.phoneNumber}>{phoneNumber}</Text>
-
-          <TouchableOpacity style={[styles.editProfileButton  , accountType && {borderColor:getColor(accountType)}]} onPress={openBottomSheet}>
+          <TouchableOpacity style={[styles.editProfileButton  , accountType && {borderColor:getColor(accountType)}]} onPress={() => setBottomSheetVisible(true)}>
             <View style={styles.editProfileButtonContent}>
               <Icon name='border-color' size={15} color={'black'} />
               <Text style={styles.editProfileButtonText}>Edit Profile</Text>
@@ -80,8 +76,15 @@ const AccountProfile:React.FC<AccountProfileProps> = ({navigation}) => {
           <CustomProfileOption optionName='PhoneNumber' data={phoneNumber} icon='call' />
         </View>
 
-        {/* Render delete account button */}
-        <TouchableOpacity style={styles.deleteAccountButton} onPress={openDeleteAccountSheet}>
+        
+        <TouchableOpacity style={[styles.deleteAccountButton , {backgroundColor:'white' , borderColor:'red' , borderWidth:1}]} onPress={() => handleLogout()}>
+          <View style={styles.deleteAccountButtonContent}>
+            <Icon name='logout' size={25} color={'red'} />
+            <Text style={[styles.deleteAccountButtonText , {color:'red'}]}>Log out</Text>
+          </View>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.deleteAccountButton} onPress={()=>  setDeleteAccountSheetVisible(true)}>
           <View style={styles.deleteAccountButtonContent}>
             <Icon name='delete-forever' size={25} color={'white'} />
             <Text style={styles.deleteAccountButtonText}>Delete Account</Text>

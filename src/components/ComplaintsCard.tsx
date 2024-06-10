@@ -38,7 +38,7 @@ const ComplaintsCard:React.FC<ComplaintsCardProps> = ({icon,message , time , col
     <TouchableOpacity onPress={() => handleDetails()}>
     <View style={[styles.notificationView , accountType && {borderColor:activeThemeColor}]}>
                  <View style={styles.notificationIcon}>
-                        <Icon name={icon} size={45} color={color} />
+                        <Icon name={icon} size={40} color={color} />
                  </View>
                  <View style={styles.notificationData}>
                        <Text style={styles.notificationMessage}>
@@ -49,7 +49,7 @@ const ComplaintsCard:React.FC<ComplaintsCardProps> = ({icon,message , time , col
                        </Text>
                  </View>
                  {
-                       statusIcon && <FontIcon name={statusIcon} size={35}  color={statusIconColor}/>
+                       statusIcon && <FontIcon name={statusIcon} size={30}  color={statusIconColor}/>
                  }
 
                  
@@ -88,12 +88,13 @@ const styles = StyleSheet.create({
     flex:1,
   },
   notificationMessage: {
-    fontSize: 20,
+    fontSize: 18,
     color: 'black',
     fontWeight: '500',
   },
   notificationTime: {
     fontWeight: '600',
+    fontSize:13,
   },
 });
 
