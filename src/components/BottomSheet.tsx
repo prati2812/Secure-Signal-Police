@@ -138,53 +138,50 @@ const BottomSheet:React.FC<BottomSheetProps> = ({setBottomSheetVisible}) => {
         <Pressable style={{width: '100%', height: '45%'}}>
           <Animated.View
             style={[styles.bottomSheet, {transform: [{translateY: slide}]}]}>
-            <View style={styles.editProfileView}>
-              <Text style={styles.editProfileTxt}>Edit Profile</Text>
-            </View>
-            {/* Edit User Image */}
-            <View style={styles.editUserImageView}>
-              <View style={styles.editProfileImage}>  
-                <Image
-                  source={{
-                    uri: imageUri ? imageUri : 'https://cdn-icons-png.flaticon.com/512/149/149071.png',
-                  }}
-                  style={{flex: 1}}
-                  resizeMode="cover"
-                 />
-              </View>
-              <TouchableOpacity
-                  style={styles.editProfileIcon}
-                  onPress={() => setImageSelectionSheetVisible(true)}>
-                  <Icon name="edit" size={20} color={'black'} />
-              </TouchableOpacity>
-            </View>
-
-            {/* Edit Username */}
-            <View style={styles.editTextInput}>
-              <TextInput
-                style={styles.editUsername}
-                placeholder="Enter your name"
-                onChangeText={(text) => setedittedUserName(text)}
-                value={edittedUsername}
-              />
-            </View>
 
 
+             {
+             isIndicatorVisible ? <View style={{alignItems:'center' , justifyContent:'center' , flex:1}}>
+                  <ActivityIndicator size={30} color={'green'}/>
+             </View>  :
+             ( 
+                      
+              <><View style={styles.editProfileView}>
+                    <Text style={styles.editProfileTxt}>Edit Profile</Text>
+                  </View><View style={styles.editUserImageView}>
+                      <View style={styles.editProfileImage}>
+                        <Image
+                          source={{
+                            uri: imageUri ? imageUri : 'https://cdn-icons-png.flaticon.com/512/149/149071.png',
+                          }}
+                          style={{ flex: 1 }}
+                          resizeMode="cover" />
+                      </View>
+                      <TouchableOpacity
+                        style={styles.editProfileIcon}
+                        onPress={() => setImageSelectionSheetVisible(true)}>
+                        <Icon name="edit" size={20} color={'black'} />
+                      </TouchableOpacity>
+                    </View><View style={styles.editTextInput}>
+                      <TextInput
+                        style={styles.editUsername}
+                        placeholder="Enter your name"
+                        onChangeText={(text) => setedittedUserName(text)}
+                        value={edittedUsername} />
+                    </View><View style={styles.buttonView}>
+                      <TouchableOpacity
+                        style={styles.cancelButton}
+                        onPress={() => closeModal()}>
+                        <Text style={styles.btnText}>Cancel</Text>
+                      </TouchableOpacity>
 
-            <View style={styles.buttonView}>
-              <TouchableOpacity
-                style={styles.cancelButton}
-                onPress={() => closeModal()}>
-                <Text style={styles.btnText}>Cancel</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity style={styles.updateButton} onPress={() => handleUpdateData()}>
-                {
-                   isIndicatorVisible ? <ActivityIndicator size={25} color={'green'}/>  
-                      : <Text style={styles.btnText}>Update</Text>
-                }                                                          
-              </TouchableOpacity>
-            </View>
+                      <TouchableOpacity style={styles.updateButton} onPress={() => handleUpdateData()}>
+                        {isIndicatorVisible ? <ActivityIndicator size={25} color={'green'} />
+                          : <Text style={styles.btnText}>Update</Text>}
+                      </TouchableOpacity>
+                    </View></>
+             )}  
+            
           </Animated.View>
         </Pressable>
       </Pressable>

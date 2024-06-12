@@ -17,7 +17,7 @@ const HandleError: React.FC<HandleErrorProps> = (props) => {
 const styles = StyleSheet.create({
     errorView:{
         paddingLeft:25,
-        marginTop:-33,
+        marginTop:-28,
         padding:10, 
      }, 
      errorText:{

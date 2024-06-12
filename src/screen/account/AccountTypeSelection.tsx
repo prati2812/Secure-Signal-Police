@@ -86,7 +86,7 @@ const styles = StyleSheet.create({
         paddingTop:10,
         fontSize:22,
         fontWeight:'700',
-        color:'black'
+        color:'white'
     },
     queryBtn:{
         margin:30,

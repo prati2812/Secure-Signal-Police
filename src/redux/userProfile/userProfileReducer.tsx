@@ -1,4 +1,4 @@
-import { ADD_ACCOUNT_TYPE, ADD_IMAGE_URI, ADD_TOKEN, ADD_USER_NAME, IS_PROFILE_COMPLETED, USER_IMAGE_RESPONSE, addAccountType } from "./action";
+import { ADD_ACCOUNT_TYPE, ADD_IMAGE_URI, ADD_TOKEN, ADD_USER_ADDRESS, ADD_USER_NAME, IS_PROFILE_COMPLETED, USER_IMAGE_RESPONSE, addAccountType } from "./action";
 
 
 const inintialState ={
@@ -8,6 +8,7 @@ const inintialState ={
     token:'',
     accountType:'',
     isProfileCompleted:false,
+    address:'',
 }
 
 const userProfileReducer = (state = inintialState , action: { type: any; payload: any; }) => {
@@ -32,6 +33,12 @@ const userProfileReducer = (state = inintialState , action: { type: any; payload
                 ...state,
                 token:action.payload,
             }
+
+        case ADD_USER_ADDRESS:
+            return{
+                ...state,
+                address:action.payload,
+            }    
         
         case ADD_ACCOUNT_TYPE:
             console.log(action.payload);

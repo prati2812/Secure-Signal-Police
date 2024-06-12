@@ -20,8 +20,11 @@ const UserProfileScreen:React.FC<UserProfileScreenProps> = ({navigation}) => {
   const [location, setLocation] = useState({ latitude: 0, longitude: 0 });
   const [accountType , setAccountType] = useState<string | null>('');
   const name = useSelector((state:any) => state.userProfile.userName);
+  const protectorAddress = useSelector((state:any) => state.userProfile.address);
   const [userName , setUserName] = useState('');
+  const [address, setAddress] = useState('');
   const [isError , setIsError] = useState(false);
+  const [isAddressError , setAddressError] = useState(false);
   const [isImageSelectionSheetVisible , setImageSelectionSheetVisible] = useState(false);
   const [notificationToken , setNotificationToken] = useState<string | null>('');
   const [isIndicatorVisible, setIndicatorVisible] = useState(false);
@@ -49,7 +52,8 @@ const UserProfileScreen:React.FC<UserProfileScreenProps> = ({navigation}) => {
 
   useEffect(() => {
     setUserName(name);
-  },[name]);
+    setAddress(protectorAddress);
+  },[name , protectorAddress]);
 
 
   
@@ -144,6 +148,7 @@ const UserProfileScreen:React.FC<UserProfileScreenProps> = ({navigation}) => {
 
     formData.append('phoneNumber' , currentUser?.phoneNumber);
     formData.append('userName' , userName);
+    formData.append('address', address);
     formData.append('userId', currentUser?.uid);
     formData.append('location', JSON.stringify({"latitude": location.latitude , "longtitude": location.longitude}));
     formData.append('notificationToken', notificationToken);
@@ -236,13 +241,25 @@ const UserProfileScreen:React.FC<UserProfileScreenProps> = ({navigation}) => {
 
   // UserName Validation
   const userNamevalidation = (text : string) => {
-    if(text.length !<= 2){
+   
+    
+    if(text.length <= 3){
       setIsError(true);
       setUserName(text);
       return false;
     } 
     setUserName(text);
     setIsError(false);
+  }
+
+  const addressValidation = (text : string) => {
+    if(text.length !<= 4){
+      setAddressError(true);
+      setAddress(text);
+      return false;
+    } 
+    setAddress(text);
+    setAddressError(false);
   }
   
   const getColor = (accountType: string | null) => {
@@ -255,7 +272,7 @@ const UserProfileScreen:React.FC<UserProfileScreenProps> = ({navigation}) => {
     }
   };
   
-  const isDisabled = isError || isIndicatorVisible || !userName;
+  const isDisabled = isError || isIndicatorVisible || !userName || !address;
 
   return (
     <>
@@ -305,16 +322,29 @@ const UserProfileScreen:React.FC<UserProfileScreenProps> = ({navigation}) => {
                 </View>
                 
                {
-                  isError ?  <HandleError title='please enter police station name'/> : null 
+                  isError ?  <HandleError title='Please enter police station name'/> : null
                }
               
-      
+            
+              <View style={[style.editTextInputView , isError && {marginTop:-13} , !isError  && {marginTop:-20}]}>
+                  <View style={style.editTextInput}>
+                    <TextInput
+                      style={style.editUsername}
+                      placeholder="Enter Police Station Address"
+                      value={address}
+                      onChangeText={addressValidation} />
+                  </View>
+                </View>
+        
+               {
+                  isAddressError ?  <HandleError title='Please enter valid address'/> : null
+               } 
       
       
 
       <View style={style.saveProfileBtnView}>
         <TouchableOpacity
-          style={[style.SaveProfileBtn , isError && style.SaveProfileBtnDisable , accountTypeTheme && {backgroundColor:getColor(accountTypeTheme)}]}
+          style={[style.SaveProfileBtn , isError && isAddressError && style.SaveProfileBtnDisable , accountTypeTheme && {backgroundColor:getColor(accountTypeTheme)}]}
           disabled={isDisabled}
           onPress={() => handleSaveProfile()}>
           <View style={style.btnView}>
@@ -400,6 +430,7 @@ const style = StyleSheet.create({
     justifyContent: 'flex-end',
     margin: 20,
     marginBottom: 30,
+    marginTop:-2
   },
   SaveProfileBtn: {
     backgroundColor: '#af952e',

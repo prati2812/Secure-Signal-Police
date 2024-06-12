@@ -342,7 +342,7 @@ const styles = StyleSheet.create({
     paddingLeft: 20,
   },
   otpNumberResendCode: {
-    color: 'black',
+    color: 'lightgray',
     fontSize: 14,
     fontWeight: '500',
   },

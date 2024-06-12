@@ -184,7 +184,7 @@ const showModal = (imageUrl : string|undefined) => {
              
           }
       }
-      dispatchStore(fetchComplaints(userId, accountType));
+      // dispatchStore(fetchComplaints(userId, accountType));
       navigation.goBack();
      }
      else{

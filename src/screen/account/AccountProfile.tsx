@@ -22,6 +22,7 @@ const AccountProfile:React.FC<AccountProfileProps> = ({navigation}) => {
   const [isBottomSheetVisible, setBottomSheetVisible] = useState(false);
   const [isDeleteAccountSheetVisible, setDeleteAccountSheetVisible] = useState(false);
   const userName = useSelector((state : any) => state.userProfile.userName);
+  const address = useSelector((state:any) => state.userProfile.address);
   const imageUri = useSelector((state:any) => state.userProfile.imageUri);
   const phoneNumber = firebase.auth().currentUser?.phoneNumber;
   const accountType = useSelector((state: any) => state.userProfile.accountType);
@@ -74,10 +75,12 @@ const AccountProfile:React.FC<AccountProfileProps> = ({navigation}) => {
           {/* Render custom profile options */}
           <CustomProfileOption optionName='Name' data={userName} icon='person' />
           <CustomProfileOption optionName='PhoneNumber' data={phoneNumber} icon='call' />
+          <CustomProfileOption optionName='Address' data={address} icon='apartment'/>
+
         </View>
 
         
-        <TouchableOpacity style={[styles.deleteAccountButton , {backgroundColor:'white' , borderColor:'red' , borderWidth:1}]} onPress={() => handleLogout()}>
+        <TouchableOpacity style={[styles.deleteAccountButton , {backgroundColor:'white' , borderColor:'red' , borderWidth:1 , marginBottom:-10}]} onPress={() => handleLogout()}>
           <View style={styles.deleteAccountButtonContent}>
             <Icon name='logout' size={25} color={'red'} />
             <Text style={[styles.deleteAccountButtonText , {color:'red'}]}>Log out</Text>

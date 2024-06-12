@@ -2,7 +2,7 @@ import axios from "axios";
 import { Dispatch } from "redux";
 import base64 from 'base64-js';
 import instance from "../../axios/axiosInstance";
-import { useSelector } from "react-redux";
+
 
 
 export const ADD_USER_NAME = 'ADD_USER_NAME';
@@ -11,7 +11,7 @@ export const ADD_IMAGE_URI = 'ADD_IMAGE_URI';
 export const ADD_TOKEN = 'ADD_TOKEN';
 export const ADD_ACCOUNT_TYPE= 'ADD_ACCOUNT_TYPE';
 export const IS_PROFILE_COMPLETED = 'IS_PROFILE_COMPLETED';
-
+export const ADD_USER_ADDRESS = 'ADD_USER_ADDRESS';
 
 
 
@@ -29,7 +29,7 @@ export const addUserName = (userId : string | undefined , accountType: string | 
              const response = await instance.post('/fetchDetails', {userId});
              if (response.status === 200) {
                 const { userData, imageBuffer } = await response.data;
-                const { userName } = userData;
+                const { userName , address } = userData;
                 
                 
                 dispatch({
@@ -37,33 +37,50 @@ export const addUserName = (userId : string | undefined , accountType: string | 
                     payload: userName,
                 });
 
-                const base64Image = base64.fromByteArray(imageBuffer.data);
-                const imageUrl = `data:image/jpeg;base64,${base64Image}`;
+                if(imageBuffer){
+                    const base64Image = base64.fromByteArray(imageBuffer.data);
+                    const imageUrl = `data:image/jpeg;base64,${base64Image}`;
+    
+                    dispatch({
+                        type: ADD_IMAGE_URI,
+                        payload: imageUrl,
+                    });
+                }
 
                 dispatch({
-                    type: ADD_IMAGE_URI,
-                    payload: imageUrl,
+                    type: ADD_USER_ADDRESS,
+                    payload: address,
                 });
+                
             }
            } 
            else if(accountType === 'Hospital'){
             const response = await instance.post('/hospital/fetchUserDetails', {userId});
             if (response.status === 200) {
               const {userData, imageBuffer} = await response.data;
-              const {userName} = userData;
+              const {userName , address} = userData;
 
               dispatch({
                 type: ADD_USER_NAME,
                 payload: userName,
               });
 
-              const base64Image = base64.fromByteArray(imageBuffer.data);
-              const imageUrl = `data:image/jpeg;base64,${base64Image}`;
-
+            
+              
+              if(imageBuffer){
+                const base64Image = base64.fromByteArray(imageBuffer.data);
+                const imageUrl = `data:image/jpeg;base64,${base64Image}`;
+                dispatch({
+                    type: ADD_IMAGE_URI,
+                    payload: imageUrl,
+                  });
+    
+              }
+              
               dispatch({
-                type: ADD_IMAGE_URI,
-                payload: imageUrl,
-              });
+                type: ADD_USER_ADDRESS,
+                payload: address,
+            });
              } 
            }
               
